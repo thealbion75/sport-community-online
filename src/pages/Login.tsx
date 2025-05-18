@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
 import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Define the login form schema with validation
 const loginSchema = z.object({
@@ -28,6 +29,7 @@ type ResetFormValues = z.infer<typeof resetSchema>;
 const Login = () => {
   // State for password reset dialog
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const { signIn, resetPassword } = useAuth();
 
   // Initialize login form
   const loginForm = useForm<LoginFormValues>({
@@ -49,23 +51,9 @@ const Login = () => {
   // Handle login form submission
   const onLogin = async (data: LoginFormValues) => {
     try {
-      // Here we would normally make an API call to authenticate the user
-      console.log("Login data:", data);
-      
-      // Simulate successful login
-      toast({
-        title: "Login successful",
-        description: "You are now logged in to your account.",
-      });
-      
-      // We would typically redirect to the profile page here
-      
+      await signIn(data.email, data.password);
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Login failed",
-        description: "Invalid email or password. Please try again.",
-      });
+      // Error handling is done in the signIn function in AuthContext
       console.error("Login error:", error);
     }
   };
@@ -73,27 +61,15 @@ const Login = () => {
   // Handle password reset form submission
   const onReset = async (data: ResetFormValues) => {
     try {
-      // Here we would normally make an API call to request password reset
-      console.log("Reset password data:", data);
+      await resetPassword(data.email);
       
       // Close the dialog
       setResetDialogOpen(false);
       
-      // Show success message
-      toast({
-        title: "Password reset link sent",
-        description: "Check your email for instructions to reset your password.",
-      });
-      
       // Reset the form
       resetForm.reset();
-      
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to send reset link",
-        description: "There was a problem sending the reset link. Please try again.",
-      });
+      // Error handling is done in the resetPassword function in AuthContext
       console.error("Reset password error:", error);
     }
   };

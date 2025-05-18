@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Define the registration form schema with validation
 const registerSchema = z.object({
@@ -26,6 +27,9 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Register = () => {
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
+  
   // Generate a simple math captcha (for demo purposes only - would use a real captcha service in production)
   const [captcha, setCaptcha] = useState(() => {
     const num1 = Math.floor(Math.random() * 10);
@@ -59,15 +63,12 @@ const Register = () => {
     }
 
     try {
-      // Here we would normally make an API call to register the user
-      // For now, we'll just show a success message
-      console.log("Registration data:", data);
-      
-      toast({
-        title: "Registration submitted successfully",
-        description: "Your registration is pending approval by an administrator.",
+      // Register with Supabase
+      await signUp(data.email, data.password, {
+        full_name: data.fullName,
+        club_name: data.clubName,
       });
-
+      
       // Reset the form
       form.reset();
       
@@ -76,12 +77,11 @@ const Register = () => {
       const num2 = Math.floor(Math.random() * 10);
       setCaptcha({ num1, num2, answer: num1 + num2 });
       
+      // Redirect to login page
+      navigate('/login');
+      
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Registration failed",
-        description: "There was a problem with your registration. Please try again.",
-      });
+      // Error handling is done in the signUp function in AuthContext
       console.error("Registration error:", error);
     }
   };

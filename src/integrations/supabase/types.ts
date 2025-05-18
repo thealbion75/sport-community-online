@@ -9,13 +9,93 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      admin_roles: {
+        Row: {
+          created_at: string
+          id: string
+          is_admin: boolean
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          is_admin?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+        }
+        Relationships: []
+      }
+      club_profiles: {
+        Row: {
+          approved: boolean
+          category: string
+          club_name: string
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          description: string
+          id: string
+          meeting_times: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          approved?: boolean
+          category: string
+          club_name: string
+          contact_email: string
+          contact_phone: string
+          created_at?: string
+          description: string
+          id: string
+          meeting_times: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          approved?: boolean
+          category?: string
+          club_name?: string
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          description?: string
+          id?: string
+          meeting_times?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      sports_categories: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
