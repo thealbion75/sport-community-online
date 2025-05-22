@@ -165,9 +165,9 @@ const Clubs = () => {
   if (isLoading) {
     return (
       <Layout>
-        <div className="egsport-container py-12">
+        <div className="container py-12">
           <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-egsport-blue"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         </div>
       </Layout>
@@ -176,7 +176,7 @@ const Clubs = () => {
 
   return (
     <Layout>
-      <div className="egsport-container py-12">
+      <div className="container py-12">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">Sports Clubs Directory</h1>
           
@@ -206,7 +206,7 @@ const Clubs = () => {
                       <SelectValue placeholder="Filter by sport" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Sports</SelectItem>
+                      <SelectItem value="all">All Sports</SelectItem>
                       {categories.map(category => (
                         <SelectItem key={category} value={category}>
                           {category}
@@ -245,7 +245,7 @@ const Clubs = () => {
                               <p className="text-sm text-blue-600">{club.category}</p>
                             </div>
                             {hasPositions && (
-                              <Badge className="bg-egsport-blue hover:bg-egsport-blue/90">
+                              <Badge className="bg-blue-600 hover:bg-blue-700">
                                 {clubPositions.length} volunteer {clubPositions.length === 1 ? 'position' : 'positions'}
                               </Badge>
                             )}
@@ -413,7 +413,7 @@ const Clubs = () => {
                         </div>
                       </CardContent>
                       <CardFooter className="flex justify-end">
-                        <Button className="bg-egsport-blue hover:bg-egsport-blue/90">
+                        <Button className="bg-blue-600 hover:bg-blue-700">
                           Apply Now
                         </Button>
                       </CardFooter>
@@ -504,7 +504,7 @@ const Clubs = () => {
                           >
                             View All {club?.club_name} Positions
                           </Button>
-                          <Button className="bg-egsport-blue hover:bg-egsport-blue/90">
+                          <Button className="bg-blue-600 hover:bg-blue-700">
                             Apply Now
                           </Button>
                         </CardFooter>
