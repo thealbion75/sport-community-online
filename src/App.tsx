@@ -12,6 +12,7 @@ import Clubs from "./pages/Clubs";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Initialize the React Query client
 const queryClient = new QueryClient();
@@ -34,9 +35,9 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/clubs" element={<Clubs />} />
             
-            {/* Protected routes - in a real app, these would be secured */}
+            {/* Protected routes */}
             <Route path="/profile" element={<Profile />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             
             {/* 404 page for non-existent routes */}
             <Route path="*" element={<NotFound />} />

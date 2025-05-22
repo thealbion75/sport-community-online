@@ -1,53 +1,37 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
 import { supabase } from '@/integrations/supabase/client';
+import { Facebook, Instagram, Twitter, Globe, Mail, Phone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/hooks/use-toast';
-
-// Define the sports categories
-const sportsCategories = [
-  "All Categories",
-  "Football",
-  "Rugby",
-  "Cricket",
-  "Tennis",
-  "Swimming",
-  "Athletics",
-  "Cycling",
-  "Badminton",
-  "Basketball",
-  "Chess",
-  "Golf",
-  "Netball",
-  "Martial Arts",
-  "Table Tennis",
-  "Other",
-];
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 interface ClubProfile {
   id: string;
   club_name: string;
   category: string;
+  contact_email: string;
+  contact_phone: string | null;
   description: string;
   website: string | null;
-  contact_email: string;
-  contact_phone: string;
+  facebook_url: string | null;
+  twitter_url: string | null;
+  instagram_url: string | null;
   meeting_times: string;
+  approved: boolean;
 }
 
 const Clubs = () => {
   const [clubs, setClubs] = useState<ClubProfile[]>([]);
   const [filteredClubs, setFilteredClubs] = useState<ClubProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
 
-  // Fetch approved club profiles
+  // Fetch club profiles
   useEffect(() => {
-    const fetchApprovedClubs = async () => {
+    const fetchClubs = async () => {
       try {
         const { data, error } = await supabase
           .from('club_profiles')
@@ -62,57 +46,53 @@ const Clubs = () => {
         if (data) {
           setClubs(data);
           setFilteredClubs(data);
+          
+          // Extract unique categories for the filter
+          const uniqueCategories = Array.from(new Set(data.map(club => club.category)));
+          setCategories(uniqueCategories);
         }
       } catch (error) {
-        console.error('Error fetching club profiles:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to load club profiles.',
-        });
+        console.error('Error fetching clubs:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchApprovedClubs();
+    fetchClubs();
   }, []);
 
-  // Filter clubs based on search term and category
+  // Filter clubs based on search query and category filter
   useEffect(() => {
-    let results = clubs;
+    let result = clubs;
     
-    // Filter by search term
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      results = results.filter(club => 
-        club.club_name.toLowerCase().includes(term) || 
-        club.description.toLowerCase().includes(term)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(club => 
+        club.club_name.toLowerCase().includes(query) ||
+        club.description.toLowerCase().includes(query) ||
+        club.meeting_times.toLowerCase().includes(query)
       );
     }
     
-    // Filter by category
-    if (selectedCategory !== 'All Categories') {
-      results = results.filter(club => club.category === selectedCategory);
+    if (categoryFilter) {
+      result = result.filter(club => club.category === categoryFilter);
     }
     
-    setFilteredClubs(results);
-  }, [searchTerm, selectedCategory, clubs]);
+    setFilteredClubs(result);
+  }, [searchQuery, categoryFilter, clubs]);
 
-  // Handle search input change
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
-  // Handle category selection change
   const handleCategoryChange = (value: string) => {
-    setSelectedCategory(value);
+    setCategoryFilter(value);
   };
-
-  // Clear filters
-  const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedCategory('All Categories');
+  
+  const resetFilters = () => {
+    setSearchQuery('');
+    setCategoryFilter('');
+    setFilteredClubs(clubs);
   };
 
   if (isLoading) {
@@ -131,94 +111,133 @@ const Clubs = () => {
     <Layout>
       <div className="egsport-container py-12">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Find Local Sports Clubs</h1>
-          <p className="text-gray-600 mb-8">
-            Discover sports clubs and activities in your area
-          </p>
-
-          {/* Search and filter section */}
-          <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="col-span-1 md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <Select 
-                  value={selectedCategory} 
-                  onValueChange={handleCategoryChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sportsCategories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="col-span-1 md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                <Input 
-                  type="text" 
-                  placeholder="Search by name or description" 
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                />
-              </div>
+          <h1 className="text-3xl font-bold mb-8">Sports Clubs Directory</h1>
+          
+          {/* Search and Filter */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="flex-1">
+              <Input
+                type="text"
+                placeholder="Search clubs..."
+                value={searchQuery}
+                onChange={handleSearch}
+                className="w-full"
+              />
             </div>
-            
-            {(searchTerm || selectedCategory !== 'All Categories') && (
-              <div className="mt-4 flex justify-end">
-                <Button variant="outline" onClick={clearFilters}>
-                  Clear Filters
-                </Button>
-              </div>
+            <div className="w-full sm:w-64">
+              <Select value={categoryFilter} onValueChange={handleCategoryChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by sport" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Sports</SelectItem>
+                  {categories.map(category => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(searchQuery || categoryFilter) && (
+              <button 
+                onClick={resetFilters}
+                className="bg-gray-100 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                Clear Filters
+              </button>
             )}
           </div>
-
-          {/* Results section */}
-          <div className="space-y-6">
-            {filteredClubs.length === 0 ? (
-              <div className="text-center py-12">
-                <h3 className="text-lg font-medium text-gray-900">No clubs found</h3>
-                <p className="mt-2 text-gray-500">
-                  Try adjusting your search or filters to find what you're looking for.
-                </p>
-              </div>
-            ) : (
-              filteredClubs.map((club) => (
-                <div key={club.id} className="bg-white p-6 rounded-lg shadow-sm">
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-start">
-                    <div>
-                      <h2 className="text-xl font-bold">{club.club_name}</h2>
-                      <p className="text-sm text-gray-500 mb-2">Category: {club.category}</p>
-                      <p className="mb-4">{club.description}</p>
+          
+          {/* Clubs List */}
+          {filteredClubs.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No clubs found matching your search criteria.</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              {filteredClubs.map((club) => (
+                <div key={club.id} className="border rounded-lg overflow-hidden shadow-sm">
+                  <div className="bg-gray-50 px-4 py-3 border-b">
+                    <h2 className="font-bold text-lg">{club.club_name}</h2>
+                    <p className="text-sm text-blue-600">{club.category}</p>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-gray-700 mb-4">{club.description}</p>
+                    
+                    <div className="mb-3">
+                      <h3 className="font-semibold text-sm text-gray-600 mb-1">Meeting Times</h3>
+                      <p className="text-sm">{club.meeting_times}</p>
+                    </div>
+                    
+                    <div className="text-sm space-y-1">
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 mr-2 text-gray-500" />
+                        <a href={`mailto:${club.contact_email}`} className="text-blue-600 hover:underline">
+                          {club.contact_email}
+                        </a>
+                      </div>
                       
-                      <div className="space-y-1 text-sm">
-                        <p><strong>Meeting Times:</strong> {club.meeting_times}</p>
-                        <p><strong>Contact:</strong> {club.contact_email} | {club.contact_phone}</p>
+                      {club.contact_phone && (
+                        <div className="flex items-center">
+                          <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                          <a href={`tel:${club.contact_phone}`} className="text-blue-600 hover:underline">
+                            {club.contact_phone}
+                          </a>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center space-x-3 mt-3">
                         {club.website && (
-                          <p>
-                            <strong>Website:</strong>{' '}
-                            <a 
-                              href={club.website.startsWith('http') ? club.website : `https://${club.website}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-egsport-blue hover:underline"
-                            >
-                              {club.website}
-                            </a>
-                          </p>
+                          <a 
+                            href={club.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-gray-600 hover:text-blue-600 transition-colors"
+                          >
+                            <Globe className="h-5 w-5" />
+                          </a>
+                        )}
+                        
+                        {club.facebook_url && (
+                          <a 
+                            href={club.facebook_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 transition-colors"
+                          >
+                            <Facebook className="h-5 w-5" />
+                          </a>
+                        )}
+                        
+                        {club.instagram_url && (
+                          <a 
+                            href={club.instagram_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-pink-600 hover:text-pink-800 transition-colors"
+                          >
+                            <Instagram className="h-5 w-5" />
+                          </a>
+                        )}
+                        
+                        {club.twitter_url && (
+                          <a 
+                            href={club.twitter_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-600 transition-colors"
+                          >
+                            <Twitter className="h-5 w-5" />
+                          </a>
                         )}
                       </div>
                     </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Layout>

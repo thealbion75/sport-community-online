@@ -6,13 +6,20 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { Facebook, Instagram, Twitter, Globe } from 'lucide-react';
 
 interface ClubProfile {
   id: string;
   club_name: string;
   category: string;
   contact_email: string;
+  contact_phone: string | null;
   description: string;
+  website: string | null;
+  facebook_url: string | null;
+  twitter_url: string | null;
+  instagram_url: string | null;
+  meeting_times: string;
   approved: boolean;
   created_at: string;
 }
@@ -154,6 +161,31 @@ const Admin = () => {
     }
   };
 
+  const SocialLinks = ({ club }: { club: ClubProfile }) => (
+    <div className="flex space-x-2 mt-2">
+      {club.website && (
+        <a href={club.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700">
+          <Globe className="h-4 w-4" />
+        </a>
+      )}
+      {club.facebook_url && (
+        <a href={club.facebook_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+          <Facebook className="h-4 w-4" />
+        </a>
+      )}
+      {club.instagram_url && (
+        <a href={club.instagram_url} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:text-pink-800">
+          <Instagram className="h-4 w-4" />
+        </a>
+      )}
+      {club.twitter_url && (
+        <a href={club.twitter_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-600">
+          <Twitter className="h-4 w-4" />
+        </a>
+      )}
+    </div>
+  );
+
   if (isLoading) {
     return (
       <Layout>
@@ -180,76 +212,84 @@ const Admin = () => {
   }
 
   return (
-    <ProtectedRoute>
-      <Layout>
-        <div className="egsport-container py-12">
-          <div className="max-w-5xl mx-auto">
-            <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+    <Layout>
+      <div className="egsport-container py-12">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+          
+          <div className="space-y-12">
+            {/* Pending Approvals Section */}
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">Pending Approvals</h2>
+              {pendingClubs.length === 0 ? (
+                <p className="text-gray-500 italic">No pending club approvals</p>
+              ) : (
+                <div className="space-y-4">
+                  {pendingClubs.map((club) => (
+                    <div key={club.id} className="border rounded-lg p-6 bg-white shadow-sm">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-lg font-medium">{club.club_name}</h3>
+                          <p className="text-sm text-gray-500">Sport: {club.category}</p>
+                          <p className="text-sm text-gray-500">
+                            Contact: {club.contact_email} 
+                            {club.contact_phone && ` | ${club.contact_phone}`}
+                          </p>
+                          <p className="mt-2">{club.description}</p>
+                          <p className="text-sm text-gray-500 mt-2">Meeting times: {club.meeting_times}</p>
+                          <SocialLinks club={club} />
+                        </div>
+                        <Button 
+                          onClick={() => approveClub(club.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          Approve
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             
-            <div className="space-y-12">
-              {/* Pending Approvals Section */}
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">Pending Approvals</h2>
-                {pendingClubs.length === 0 ? (
-                  <p className="text-gray-500 italic">No pending club approvals</p>
-                ) : (
-                  <div className="space-y-4">
-                    {pendingClubs.map((club) => (
-                      <div key={club.id} className="border rounded-lg p-6 bg-white shadow-sm">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="text-lg font-medium">{club.club_name}</h3>
-                            <p className="text-sm text-gray-500">Sport: {club.category}</p>
-                            <p className="text-sm text-gray-500">Contact: {club.contact_email}</p>
-                            <p className="mt-2">{club.description}</p>
-                          </div>
-                          <Button 
-                            onClick={() => approveClub(club.id)}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            Approve
-                          </Button>
+            {/* Approved Clubs Section */}
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">Approved Clubs</h2>
+              {approvedClubs.length === 0 ? (
+                <p className="text-gray-500 italic">No approved clubs</p>
+              ) : (
+                <div className="space-y-4">
+                  {approvedClubs.map((club) => (
+                    <div key={club.id} className="border rounded-lg p-6 bg-white shadow-sm">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-lg font-medium">{club.club_name}</h3>
+                          <p className="text-sm text-gray-500">Sport: {club.category}</p>
+                          <p className="text-sm text-gray-500">
+                            Contact: {club.contact_email} 
+                            {club.contact_phone && ` | ${club.contact_phone}`}
+                          </p>
+                          <p className="mt-2">{club.description}</p>
+                          <p className="text-sm text-gray-500 mt-2">Meeting times: {club.meeting_times}</p>
+                          <SocialLinks club={club} />
                         </div>
+                        <Button 
+                          onClick={() => revokeApproval(club.id)}
+                          variant="outline"
+                          className="border-red-500 text-red-500 hover:bg-red-50"
+                        >
+                          Revoke Approval
+                        </Button>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              {/* Approved Clubs Section */}
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">Approved Clubs</h2>
-                {approvedClubs.length === 0 ? (
-                  <p className="text-gray-500 italic">No approved clubs</p>
-                ) : (
-                  <div className="space-y-4">
-                    {approvedClubs.map((club) => (
-                      <div key={club.id} className="border rounded-lg p-6 bg-white shadow-sm">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="text-lg font-medium">{club.club_name}</h3>
-                            <p className="text-sm text-gray-500">Sport: {club.category}</p>
-                            <p className="text-sm text-gray-500">Contact: {club.contact_email}</p>
-                            <p className="mt-2">{club.description}</p>
-                          </div>
-                          <Button 
-                            onClick={() => revokeApproval(club.id)}
-                            variant="outline"
-                            className="border-red-500 text-red-500 hover:bg-red-50"
-                          >
-                            Revoke Approval
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </Layout>
-    </ProtectedRoute>
+      </div>
+    </Layout>
   );
 };
 

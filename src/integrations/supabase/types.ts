@@ -33,11 +33,14 @@ export type Database = {
           category: string
           club_name: string
           contact_email: string
-          contact_phone: string
+          contact_phone: string | null
           created_at: string
           description: string
+          facebook_url: string | null
           id: string
+          instagram_url: string | null
           meeting_times: string
+          twitter_url: string | null
           updated_at: string
           website: string | null
         }
@@ -46,11 +49,14 @@ export type Database = {
           category: string
           club_name: string
           contact_email: string
-          contact_phone: string
+          contact_phone?: string | null
           created_at?: string
           description: string
+          facebook_url?: string | null
           id: string
+          instagram_url?: string | null
           meeting_times: string
+          twitter_url?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -59,11 +65,14 @@ export type Database = {
           category?: string
           club_name?: string
           contact_email?: string
-          contact_phone?: string
+          contact_phone?: string | null
           created_at?: string
           description?: string
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
           meeting_times?: string
+          twitter_url?: string | null
           updated_at?: string
           website?: string | null
         }

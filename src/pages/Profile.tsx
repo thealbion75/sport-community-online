@@ -8,11 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { Facebook, Instagram, Twitter } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Define the sports categories
 const sportsCategories = [
@@ -33,6 +36,17 @@ const sportsCategories = [
   "Other",
 ];
 
+// Define days of the week for meeting times
+const daysOfWeek = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
 // Define the club profile form schema with validation
 const profileSchema = z.object({
   clubName: z.string().min(2, { message: "Club name must be at least 2 characters" }),
@@ -40,8 +54,11 @@ const profileSchema = z.object({
   description: z.string().min(10, { message: "Description must be at least 10 characters" }).max(500, { message: "Description must not exceed 500 characters" }),
   website: z.string().url({ message: "Please enter a valid URL" }).or(z.literal("")),
   contactEmail: z.string().email({ message: "Please enter a valid email address" }),
-  contactPhone: z.string().min(5, { message: "Please enter a valid phone number" }),
+  contactPhone: z.string().min(5, { message: "Please enter a valid phone number" }).or(z.literal("")),
   meetingTimes: z.string().min(2, { message: "Please enter when your club meets" }),
+  facebookUrl: z.string().url({ message: "Please enter a valid Facebook URL" }).or(z.literal("")),
+  instagramUrl: z.string().url({ message: "Please enter a valid Instagram URL" }).or(z.literal("")),
+  twitterUrl: z.string().url({ message: "Please enter a valid Twitter/X URL" }).or(z.literal("")),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -49,6 +66,8 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 const Profile = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [isNewProfile, setIsNewProfile] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
   
   // Define club data with proper types
   const [clubData, setClubData] = useState<ProfileFormValues>({
@@ -59,6 +78,9 @@ const Profile = () => {
     contactEmail: "",
     contactPhone: "",
     meetingTimes: "",
+    facebookUrl: "",
+    instagramUrl: "",
+    twitterUrl: "",
   });
 
   // Initialize form with react-hook-form and zod validation
@@ -80,18 +102,26 @@ const Profile = () => {
           .single();
         
         if (error) {
-          throw error;
+          if (error.code === 'PGRST116') { // No data found
+            setIsNewProfile(true);
+          } else {
+            throw error;
+          }
         }
         
         if (data) {
+          setIsApproved(data.approved);
           const profileData = {
             clubName: data.club_name,
             category: data.category,
             description: data.description,
             website: data.website || '',
             contactEmail: data.contact_email,
-            contactPhone: data.contact_phone,
+            contactPhone: data.contact_phone || '',
             meetingTimes: data.meeting_times,
+            facebookUrl: data.facebook_url || '',
+            instagramUrl: data.instagram_url || '',
+            twitterUrl: data.twitter_url || '',
           };
           
           setClubData(profileData);
@@ -99,11 +129,7 @@ const Profile = () => {
         }
       } catch (error) {
         console.error('Error fetching club profile:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to load your club profile.',
-        });
+        // We don't show an error toast here as this is expected for new users
       } finally {
         setIsLoading(false);
       }
@@ -126,8 +152,11 @@ const Profile = () => {
           description: data.description,
           website: data.website || null,
           contact_email: data.contactEmail,
-          contact_phone: data.contactPhone,
+          contact_phone: data.contactPhone || null,
           meeting_times: data.meetingTimes,
+          facebook_url: data.facebookUrl || null,
+          instagram_url: data.instagramUrl || null,
+          twitter_url: data.twitterUrl || null,
         });
       
       if (error) {
@@ -136,6 +165,7 @@ const Profile = () => {
 
       // Update local state with new data
       setClubData(data);
+      setIsNewProfile(false);
       
       // Show success message
       toast({
@@ -175,6 +205,25 @@ const Profile = () => {
               <p className="text-gray-600 mb-6">
                 Keep your club information up to date to help people find and join your activities.
               </p>
+              
+              {isNewProfile && (
+                <Alert className="mb-6 bg-blue-50 border-blue-200">
+                  <AlertDescription>
+                    This is your first time setting up your club profile. 
+                    Once submitted, your club listing will need admin approval before appearing in the public directory.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {!isNewProfile && !isApproved && (
+                <Alert className="mb-6 bg-yellow-50 border-yellow-200">
+                  <AlertDescription>
+                    Your club profile is currently pending admin approval. 
+                    It will appear in the public directory once approved.
+                    You can still make changes to your information at any time.
+                  </AlertDescription>
+                </Alert>
+              )}
               
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -245,55 +294,7 @@ const Profile = () => {
                     )}
                   />
 
-                  {/* Website field */}
-                  <FormField
-                    control={form.control}
-                    name="website"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Website URL</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://yourclub.com" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Optional - Leave blank if you don't have a website.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Contact Email field */}
-                  <FormField
-                    control={form.control}
-                    name="contactEmail"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Contact Phone field */}
-                  <FormField
-                    control={form.control}
-                    name="contactPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Phone</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Meeting Times field */}
+                  {/* Meeting Times field - improved version */}
                   <FormField
                     control={form.control}
                     name="meetingTimes"
@@ -301,15 +302,126 @@ const Profile = () => {
                       <FormItem>
                         <FormLabel>Meeting Times</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Tuesdays and Thursdays, 7-9pm" {...field} />
+                          <Textarea
+                            placeholder="e.g., Mondays 7-9pm at Community Center, Thursdays 6-8pm at Local Park"
+                            className="min-h-[80px]"
+                            {...field}
+                          />
                         </FormControl>
                         <FormDescription>
-                          When and how often does your club meet?
+                          Please provide details about when and where your club meets. 
+                          Include days, times, and locations.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  {/* Contact Information */}
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-medium">Contact Information</h3>
+                    
+                    {/* Contact Email field */}
+                    <FormField
+                      control={form.control}
+                      name="contactEmail"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contact Email (Required)</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Contact Phone field - now optional */}
+                    <FormField
+                      control={form.control}
+                      name="contactPhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contact Phone (Optional)</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Website field - now optional */}
+                    <FormField
+                      control={form.control}
+                      name="website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website URL (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://yourclub.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Social Media Links */}
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-medium">Social Media (Optional)</h3>
+                    
+                    {/* Facebook URL field */}
+                    <FormField
+                      control={form.control}
+                      name="facebookUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center">
+                            <Facebook className="h-4 w-4 mr-2" /> Facebook Page URL
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://facebook.com/yourclub" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Instagram URL field */}
+                    <FormField
+                      control={form.control}
+                      name="instagramUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center">
+                            <Instagram className="h-4 w-4 mr-2" /> Instagram Profile URL
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://instagram.com/yourclub" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Twitter/X URL field */}
+                    <FormField
+                      control={form.control}
+                      name="twitterUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center">
+                            <Twitter className="h-4 w-4 mr-2" /> Twitter/X Profile URL
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://twitter.com/yourclub" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <Button type="submit" className="bg-egsport-blue hover:bg-egsport-blue/90">
                     Save Changes
