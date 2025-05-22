@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +15,8 @@ import { supabase } from '@/integrations/supabase/client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import VolunteerPositions from '@/components/VolunteerPositions';
 
 // Define the sports categories
 const sportsCategories = [
@@ -34,17 +35,6 @@ const sportsCategories = [
   "Martial Arts",
   "Table Tennis",
   "Other",
-];
-
-// Define days of the week for meeting times
-const daysOfWeek = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
 ];
 
 // Define the club profile form schema with validation
@@ -68,6 +58,7 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isNewProfile, setIsNewProfile] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
+  const [profileExists, setProfileExists] = useState(false);
   
   // Define club data with proper types
   const [clubData, setClubData] = useState<ProfileFormValues>({
@@ -110,6 +101,7 @@ const Profile = () => {
         }
         
         if (data) {
+          setProfileExists(true);
           setIsApproved(data.approved);
           const profileData = {
             clubName: data.club_name,
@@ -143,6 +135,18 @@ const Profile = () => {
     if (!user) return;
     
     try {
+      // If profile already exists and trying to change club name, prevent it
+      if (profileExists && data.clubName !== clubData.clubName) {
+        toast({
+          variant: 'destructive',
+          title: 'Cannot change club name',
+          description: 'The club name cannot be modified after initial creation.',
+        });
+        // Reset club name to original value
+        form.setValue('clubName', clubData.clubName);
+        return;
+      }
+
       const { error } = await supabase
         .from('club_profiles')
         .upsert({
@@ -166,6 +170,7 @@ const Profile = () => {
       // Update local state with new data
       setClubData(data);
       setIsNewProfile(false);
+      setProfileExists(true);
       
       // Show success message
       toast({
@@ -201,233 +206,260 @@ const Profile = () => {
         <div className="egsport-container py-12">
           <div className="max-w-3xl mx-auto">
             <div className="egsport-card">
-              <h1 className="text-2xl font-bold mb-6">Club Profile</h1>
-              <p className="text-gray-600 mb-6">
-                Keep your club information up to date to help people find and join your activities.
-              </p>
+              <h1 className="text-2xl font-bold mb-6">Club Dashboard</h1>
               
-              {isNewProfile && (
-                <Alert className="mb-6 bg-blue-50 border-blue-200">
-                  <AlertDescription>
-                    This is your first time setting up your club profile. 
-                    Once submitted, your club listing will need admin approval before appearing in the public directory.
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              {!isNewProfile && !isApproved && (
-                <Alert className="mb-6 bg-yellow-50 border-yellow-200">
-                  <AlertDescription>
-                    Your club profile is currently pending admin approval. 
-                    It will appear in the public directory once approved.
-                    You can still make changes to your information at any time.
-                  </AlertDescription>
-                </Alert>
-              )}
-              
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Club Name field */}
-                  <FormField
-                    control={form.control}
-                    name="clubName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Club Name</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Category field */}
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sport Category</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a sport" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {sportsCategories.map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Description field */}
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Club Description</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Tell us about your club..." 
-                            className="min-h-[120px]" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Briefly describe your club, activities, and who can join.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Meeting Times field - improved version */}
-                  <FormField
-                    control={form.control}
-                    name="meetingTimes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Meeting Times</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="e.g., Mondays 7-9pm at Community Center, Thursdays 6-8pm at Local Park"
-                            className="min-h-[80px]"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Please provide details about when and where your club meets. 
-                          Include days, times, and locations.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Contact Information */}
-                  <div className="space-y-6">
-                    <h3 className="text-lg font-medium">Contact Information</h3>
-                    
-                    {/* Contact Email field */}
-                    <FormField
-                      control={form.control}
-                      name="contactEmail"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Email (Required)</FormLabel>
-                          <FormControl>
-                            <Input type="email" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Contact Phone field - now optional */}
-                    <FormField
-                      control={form.control}
-                      name="contactPhone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Phone (Optional)</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Website field - now optional */}
-                    <FormField
-                      control={form.control}
-                      name="website"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Website URL (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://yourclub.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+              <Tabs defaultValue="profile" className="w-full">
+                <TabsList className="mb-6">
+                  <TabsTrigger value="profile">Club Profile</TabsTrigger>
+                  <TabsTrigger value="volunteer-positions" disabled={!profileExists}>Volunteer Positions</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="profile" className="space-y-6">
+                  <p className="text-gray-600 mb-6">
+                    Keep your club information up to date to help people find and join your activities.
+                  </p>
                   
-                  {/* Social Media Links */}
-                  <div className="space-y-6">
-                    <h3 className="text-lg font-medium">Social Media (Optional)</h3>
-                    
-                    {/* Facebook URL field */}
-                    <FormField
-                      control={form.control}
-                      name="facebookUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center">
-                            <Facebook className="h-4 w-4 mr-2" /> Facebook Page URL
-                          </FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://facebook.com/yourclub" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {/* Instagram URL field */}
-                    <FormField
-                      control={form.control}
-                      name="instagramUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center">
-                            <Instagram className="h-4 w-4 mr-2" /> Instagram Profile URL
-                          </FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://instagram.com/yourclub" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {/* Twitter/X URL field */}
-                    <FormField
-                      control={form.control}
-                      name="twitterUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center">
-                            <Twitter className="h-4 w-4 mr-2" /> Twitter/X Profile URL
-                          </FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://twitter.com/yourclub" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  {isNewProfile && (
+                    <Alert className="mb-6 bg-blue-50 border-blue-200">
+                      <AlertDescription>
+                        This is your first time setting up your club profile. 
+                        Once submitted, your club listing will need admin approval before appearing in the public directory.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {!isNewProfile && !isApproved && (
+                    <Alert className="mb-6 bg-yellow-50 border-yellow-200">
+                      <AlertDescription>
+                        Your club profile is currently pending admin approval. 
+                        It will appear in the public directory once approved.
+                        You can still make changes to your information at any time.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      {/* Club Name field - readonly if profile exists */}
+                      <FormField
+                        control={form.control}
+                        name="clubName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Club Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} readOnly={profileExists} className={profileExists ? "bg-gray-100" : ""} />
+                            </FormControl>
+                            {profileExists && (
+                              <FormDescription className="text-amber-600">
+                                Club name cannot be changed after initial setup.
+                              </FormDescription>
+                            )}
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                  <Button type="submit" className="bg-egsport-blue hover:bg-egsport-blue/90">
-                    Save Changes
-                  </Button>
-                </form>
-              </Form>
+                      {/* Category field */}
+                      <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Sport Category</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a sport" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {sportsCategories.map((category) => (
+                                  <SelectItem key={category} value={category}>
+                                    {category}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Description field */}
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Club Description</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Tell us about your club..." 
+                                className="min-h-[120px]" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Briefly describe your club, activities, and who can join.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Meeting Times field */}
+                      <FormField
+                        control={form.control}
+                        name="meetingTimes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Meeting Times</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="e.g., Mondays 7-9pm at Community Center, Thursdays 6-8pm at Local Park"
+                                className="min-h-[80px]"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Please provide details about when and where your club meets. 
+                              Include days, times, and locations.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Contact Information */}
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-medium">Contact Information</h3>
+                        
+                        {/* Contact Email field */}
+                        <FormField
+                          control={form.control}
+                          name="contactEmail"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Contact Email (Required)</FormLabel>
+                              <FormControl>
+                                <Input type="email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Contact Phone field - optional */}
+                        <FormField
+                          control={form.control}
+                          name="contactPhone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Contact Phone (Optional)</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Website field - optional */}
+                        <FormField
+                          control={form.control}
+                          name="website"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Website URL (Optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="https://yourclub.com" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      {/* Social Media Links */}
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-medium">Social Media (Optional)</h3>
+                        
+                        {/* Facebook URL field */}
+                        <FormField
+                          control={form.control}
+                          name="facebookUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center">
+                                <Facebook className="h-4 w-4 mr-2" /> Facebook Page URL
+                              </FormLabel>
+                              <FormControl>
+                                <Input placeholder="https://facebook.com/yourclub" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        {/* Instagram URL field */}
+                        <FormField
+                          control={form.control}
+                          name="instagramUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center">
+                                <Instagram className="h-4 w-4 mr-2" /> Instagram Profile URL
+                              </FormLabel>
+                              <FormControl>
+                                <Input placeholder="https://instagram.com/yourclub" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        {/* Twitter/X URL field */}
+                        <FormField
+                          control={form.control}
+                          name="twitterUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center">
+                                <Twitter className="h-4 w-4 mr-2" /> Twitter/X Profile URL
+                              </FormLabel>
+                              <FormControl>
+                                <Input placeholder="https://twitter.com/yourclub" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Button type="submit" className="bg-egsport-blue hover:bg-egsport-blue/90">
+                        Save Changes
+                      </Button>
+                    </form>
+                  </Form>
+                </TabsContent>
+                
+                <TabsContent value="volunteer-positions">
+                  {profileExists ? (
+                    <VolunteerPositions />
+                  ) : (
+                    <Alert className="bg-yellow-50 border-yellow-200">
+                      <AlertDescription>
+                        Please complete your club profile before adding volunteer positions.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>

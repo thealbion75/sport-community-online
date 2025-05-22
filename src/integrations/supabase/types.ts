@@ -78,6 +78,59 @@ export type Database = {
         }
         Relationships: []
       }
+      club_volunteer_positions: {
+        Row: {
+          club_id: string
+          contact_info: string | null
+          created_at: string
+          description: string
+          id: string
+          is_live: boolean
+          location: string | null
+          requirements: string | null
+          responsibilities: string | null
+          time_commitment: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          contact_info?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          is_live?: boolean
+          location?: string | null
+          requirements?: string | null
+          responsibilities?: string | null
+          time_commitment?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          contact_info?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_live?: boolean
+          location?: string | null
+          requirements?: string | null
+          responsibilities?: string | null
+          time_commitment?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_volunteer_positions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "club_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sports_categories: {
         Row: {
           created_at: string
