@@ -59,6 +59,8 @@ const Profile = () => {
   const [isNewProfile, setIsNewProfile] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [profileExists, setProfileExists] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   
   // Define club data with proper types
   const [clubData, setClubData] = useState<ProfileFormValues>({
@@ -172,11 +174,20 @@ const Profile = () => {
       setIsNewProfile(false);
       setProfileExists(true);
       
-      // Show success message
-      toast({
-        title: 'Profile updated successfully',
-        description: 'Your club information has been updated.',
-      });
+      // Show success message and scroll to top
+      if (isNewProfile) {
+        setShowSuccessMessage(true);
+        window.scrollTo(0, 0);
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+          setActiveTab('volunteer-positions');
+        }, 3000);
+      } else {
+        toast({
+          title: 'Profile updated successfully',
+          description: 'Your club information has been updated.',
+        });
+      }
       
     } catch (error) {
       toast({
@@ -208,7 +219,15 @@ const Profile = () => {
             <div className="egsport-card">
               <h1 className="text-2xl font-bold mb-6">Club Dashboard</h1>
               
-              <Tabs defaultValue="profile" className="w-full">
+              {showSuccessMessage && (
+                <Alert className="mb-6 bg-green-50 border-green-200">
+                  <AlertDescription className="text-green-800 font-medium">
+                    Thank you for providing your club details! Your information has been saved and is now being reviewed for approval.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="mb-6">
                   <TabsTrigger value="profile">Club Profile</TabsTrigger>
                   <TabsTrigger value="volunteer-positions" disabled={!profileExists}>Volunteer Positions</TabsTrigger>
@@ -219,7 +238,7 @@ const Profile = () => {
                     Keep your club information up to date to help people find and join your activities.
                   </p>
                   
-                  {isNewProfile && (
+                  {isNewProfile && !showSuccessMessage && (
                     <Alert className="mb-6 bg-blue-50 border-blue-200">
                       <AlertDescription>
                         This is your first time setting up your club profile. 
@@ -228,7 +247,7 @@ const Profile = () => {
                     </Alert>
                   )}
                   
-                  {!isNewProfile && !isApproved && (
+                  {!isNewProfile && !isApproved && !showSuccessMessage && (
                     <Alert className="mb-6 bg-yellow-50 border-yellow-200">
                       <AlertDescription>
                         Your club profile is currently pending admin approval. 

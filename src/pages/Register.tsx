@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Define the registration form schema with validation
 const registerSchema = z.object({
@@ -29,6 +30,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const Register = () => {
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  const [isRegistered, setIsRegistered] = useState(false);
   
   // Generate a simple math captcha (for demo purposes only - would use a real captcha service in production)
   const [captcha, setCaptcha] = useState(() => {
@@ -77,12 +79,24 @@ const Register = () => {
       const num2 = Math.floor(Math.random() * 10);
       setCaptcha({ num1, num2, answer: num1 + num2 });
       
-      // Redirect to login page
-      navigate('/login');
+      // Show success message instead of redirecting
+      setIsRegistered(true);
+      window.scrollTo(0, 0);
       
-    } catch (error) {
-      // Error handling is done in the signUp function in AuthContext
-      console.error("Registration error:", error);
+    } catch (error: any) {
+      // Check for specific error about email already in use
+      if (error?.message?.toLowerCase().includes('user already registered') || 
+          error?.message?.toLowerCase().includes('email already') ||
+          error?.message?.toLowerCase().includes('already registered')) {
+        toast({
+          variant: "destructive",
+          title: "Email already in use",
+          description: "This email address has already been used with a sports club.",
+        });
+      } else {
+        // Error handling is done in the signUp function in AuthContext
+        console.error("Registration error:", error);
+      }
     }
   };
 
@@ -93,6 +107,48 @@ const Register = () => {
     setCaptcha({ num1, num2, answer: num1 + num2 });
     form.setValue("captchaValue", "");
   };
+
+  if (isRegistered) {
+    return (
+      <Layout>
+        <div className="egsport-container py-12">
+          <div className="max-w-md mx-auto">
+            <div className="egsport-card">
+              <Alert className="mb-6 bg-green-50 border-green-200">
+                <AlertDescription className="text-green-800">
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-green-900">Thank you for registering!</h2>
+                    <p>
+                      Once we have confirmed your details, you will receive an email to complete your club sign up 
+                      and be able to advertise for volunteers to fill roles in your club.
+                    </p>
+                  </div>
+                </AlertDescription>
+              </Alert>
+              
+              <div className="text-center space-y-4">
+                <Button 
+                  onClick={() => navigate('/login')}
+                  className="bg-egsport-blue hover:bg-egsport-blue/90"
+                >
+                  Go to Login
+                </Button>
+                <div className="text-sm text-gray-500">
+                  or{" "}
+                  <button 
+                    onClick={() => setIsRegistered(false)}
+                    className="text-egsport-blue hover:underline"
+                  >
+                    register another club
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

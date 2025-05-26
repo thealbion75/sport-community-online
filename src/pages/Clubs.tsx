@@ -62,7 +62,9 @@ const Clubs = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('Fetching clubs data...');
+        setIsLoading(true);
+        console.log('Starting to fetch clubs and volunteer positions...');
+        
         // Fetch clubs
         const { data: clubsData, error: clubsError } = await supabase
           .from('club_profiles')
@@ -72,22 +74,19 @@ const Clubs = () => {
         
         if (clubsError) {
           console.error('Error fetching clubs:', clubsError);
-          throw clubsError;
-        }
-        
-        console.log('Clubs data received:', clubsData);
-        
-        if (clubsData) {
-          setClubs(clubsData);
-          setFilteredClubs(clubsData);
+        } else {
+          console.log('Clubs fetched successfully:', clubsData);
+          setClubs(clubsData || []);
+          setFilteredClubs(clubsData || []);
           
           // Extract unique categories for the filter
-          const uniqueCategories = Array.from(new Set(clubsData.map(club => club.category).filter(Boolean)));
+          const uniqueCategories = Array.from(
+            new Set((clubsData || []).map(club => club.category).filter(Boolean))
+          );
           console.log('Categories found:', uniqueCategories);
           setCategories(uniqueCategories);
         }
 
-        console.log('Fetching volunteer positions...');
         // Fetch volunteer positions
         const { data: positionsData, error: positionsError } = await supabase
           .from('club_volunteer_positions')
@@ -97,16 +96,12 @@ const Clubs = () => {
         
         if (positionsError) {
           console.error('Error fetching positions:', positionsError);
-          throw positionsError;
-        }
-        
-        console.log('Volunteer positions received:', positionsData);
-        
-        if (positionsData) {
-          setVolunteerPositions(positionsData);
+        } else {
+          console.log('Volunteer positions fetched successfully:', positionsData);
+          setVolunteerPositions(positionsData || []);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error in fetchData:', error);
       } finally {
         setIsLoading(false);
       }
@@ -188,9 +183,14 @@ const Clubs = () => {
         <div className="max-w-5xl mx-auto">
           <h1 className="text-3xl font-bold mb-8">Sports Clubs Directory</h1>
           
-          <Tabs defaultValue="clubs" className="w-full mb-8" onValueChange={(value) => setViewType(value as 'clubs' | 'volunteer')}>
+          <Tabs value={viewType} onValueChange={(value) => {
+            setViewType(value as 'clubs' | 'volunteer');
+            if (value === 'clubs') {
+              backToClubs();
+            }
+          }} className="w-full mb-8">
             <TabsList>
-              <TabsTrigger value="clubs" onClick={backToClubs}>Clubs</TabsTrigger>
+              <TabsTrigger value="clubs">Clubs</TabsTrigger>
               <TabsTrigger value="volunteer">Volunteer Opportunities</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -233,10 +233,20 @@ const Clubs = () => {
                 )}
               </div>
               
+              {/* Debug information */}
+              <div className="mb-4 text-sm text-gray-500">
+                Showing {filteredClubs.length} of {clubs.length} clubs
+              </div>
+              
               {/* Clubs List */}
               {filteredClubs.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500">No clubs found matching your search criteria.</p>
+                  <p className="text-gray-500">
+                    {clubs.length === 0 
+                      ? "No approved clubs found in the database." 
+                      : "No clubs found matching your search criteria."
+                    }
+                  </p>
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-6">
