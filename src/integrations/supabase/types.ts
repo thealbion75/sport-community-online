@@ -27,6 +27,44 @@ export type Database = {
         }
         Relationships: []
       }
+      club_meeting_times: {
+        Row: {
+          club_id: string
+          created_at: string
+          day_of_week: string
+          end_time: string
+          id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          day_of_week: string
+          end_time: string
+          id?: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          day_of_week?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_meeting_times_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "club_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_profiles: {
         Row: {
           approved: boolean
@@ -39,7 +77,6 @@ export type Database = {
           facebook_url: string | null
           id: string
           instagram_url: string | null
-          meeting_times: string
           twitter_url: string | null
           updated_at: string
           website: string | null
@@ -55,7 +92,6 @@ export type Database = {
           facebook_url?: string | null
           id: string
           instagram_url?: string | null
-          meeting_times: string
           twitter_url?: string | null
           updated_at?: string
           website?: string | null
@@ -71,7 +107,6 @@ export type Database = {
           facebook_url?: string | null
           id?: string
           instagram_url?: string | null
-          meeting_times?: string
           twitter_url?: string | null
           updated_at?: string
           website?: string | null

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -17,6 +16,7 @@ import { Facebook, Instagram, Twitter } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VolunteerPositions from '@/components/VolunteerPositions';
+import MeetingTimesSelector from '@/components/MeetingTimesSelector';
 
 // Define the sports categories
 const sportsCategories = [
@@ -37,7 +37,7 @@ const sportsCategories = [
   "Other",
 ];
 
-// Define the club profile form schema with validation
+// Define the club profile form schema with validation (removed meetingTimes)
 const profileSchema = z.object({
   clubName: z.string().min(2, { message: "Club name must be at least 2 characters" }),
   category: z.string().min(1, { message: "Please select a sport category" }),
@@ -45,13 +45,18 @@ const profileSchema = z.object({
   website: z.string().url({ message: "Please enter a valid URL" }).or(z.literal("")),
   contactEmail: z.string().email({ message: "Please enter a valid email address" }),
   contactPhone: z.string().min(5, { message: "Please enter a valid phone number" }).or(z.literal("")),
-  meetingTimes: z.string().min(2, { message: "Please enter when your club meets" }),
   facebookUrl: z.string().url({ message: "Please enter a valid Facebook URL" }).or(z.literal("")),
   instagramUrl: z.string().url({ message: "Please enter a valid Instagram URL" }).or(z.literal("")),
   twitterUrl: z.string().url({ message: "Please enter a valid Twitter/X URL" }).or(z.literal("")),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
+
+interface MeetingTime {
+  day: string;
+  startTime: string;
+  endTime: string;
+}
 
 const Profile = () => {
   const { user } = useAuth();
@@ -61,6 +66,7 @@ const Profile = () => {
   const [profileExists, setProfileExists] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [meetingTimes, setMeetingTimes] = useState<MeetingTime[]>([]);
   
   // Define club data with proper types
   const [clubData, setClubData] = useState<ProfileFormValues>({
@@ -70,7 +76,6 @@ const Profile = () => {
     website: "",
     contactEmail: "",
     contactPhone: "",
-    meetingTimes: "",
     facebookUrl: "",
     instagramUrl: "",
     twitterUrl: "",
@@ -82,7 +87,14 @@ const Profile = () => {
     defaultValues: clubData,
   });
 
-  // Fetch club profile data when component mounts
+  // Initialize meeting times form
+  const meetingTimesForm = useForm({
+    defaultValues: {
+      meetingTimes: [{ day: '', startTime: '', endTime: '' }],
+    },
+  });
+
+  // Fetch club profile data and meeting times when component mounts
   useEffect(() => {
     const fetchClubProfile = async () => {
       if (!user) return;
@@ -112,7 +124,6 @@ const Profile = () => {
             website: data.website || '',
             contactEmail: data.contact_email,
             contactPhone: data.contact_phone || '',
-            meetingTimes: data.meeting_times,
             facebookUrl: data.facebook_url || '',
             instagramUrl: data.instagram_url || '',
             twitterUrl: data.twitter_url || '',
@@ -120,17 +131,35 @@ const Profile = () => {
           
           setClubData(profileData);
           form.reset(profileData);
+
+          // Fetch meeting times if approved
+          if (data.approved) {
+            const { data: meetingTimesData } = await supabase
+              .from('club_meeting_times')
+              .select('*')
+              .eq('club_id', user.id)
+              .order('day_of_week, start_time');
+
+            if (meetingTimesData && meetingTimesData.length > 0) {
+              const formattedMeetingTimes = meetingTimesData.map(mt => ({
+                day: mt.day_of_week,
+                startTime: mt.start_time,
+                endTime: mt.end_time,
+              }));
+              setMeetingTimes(formattedMeetingTimes);
+              meetingTimesForm.reset({ meetingTimes: formattedMeetingTimes });
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching club profile:', error);
-        // We don't show an error toast here as this is expected for new users
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchClubProfile();
-  }, [user, form]);
+  }, [user, form, meetingTimesForm]);
 
   // Handle form submission
   const onSubmit = async (data: ProfileFormValues) => {
@@ -144,7 +173,6 @@ const Profile = () => {
           title: 'Cannot change club name',
           description: 'The club name cannot be modified after initial creation.',
         });
-        // Reset club name to original value
         form.setValue('clubName', clubData.clubName);
         return;
       }
@@ -159,7 +187,6 @@ const Profile = () => {
           website: data.website || null,
           contact_email: data.contactEmail,
           contact_phone: data.contactPhone || null,
-          meeting_times: data.meetingTimes,
           facebook_url: data.facebookUrl || null,
           instagram_url: data.instagramUrl || null,
           twitter_url: data.twitterUrl || null,
@@ -169,12 +196,10 @@ const Profile = () => {
         throw error;
       }
 
-      // Update local state with new data
       setClubData(data);
       setIsNewProfile(false);
       setProfileExists(true);
       
-      // Show success message and scroll to top
       if (isNewProfile) {
         setShowSuccessMessage(true);
         window.scrollTo(0, 0);
@@ -196,6 +221,54 @@ const Profile = () => {
         description: 'There was a problem updating your profile. Please try again.',
       });
       console.error('Profile update error:', error);
+    }
+  };
+
+  // Handle meeting times submission
+  const onMeetingTimesSubmit = async (data: { meetingTimes: MeetingTime[] }) => {
+    if (!user || !isApproved) return;
+
+    try {
+      // Delete existing meeting times
+      await supabase
+        .from('club_meeting_times')
+        .delete()
+        .eq('club_id', user.id);
+
+      // Insert new meeting times
+      const validMeetingTimes = data.meetingTimes.filter(mt => 
+        mt.day && mt.startTime && mt.endTime
+      );
+
+      if (validMeetingTimes.length > 0) {
+        const { error } = await supabase
+          .from('club_meeting_times')
+          .insert(
+            validMeetingTimes.map(mt => ({
+              club_id: user.id,
+              day_of_week: mt.day,
+              start_time: mt.startTime,
+              end_time: mt.endTime,
+            }))
+          );
+
+        if (error) throw error;
+      }
+
+      setMeetingTimes(validMeetingTimes);
+      
+      toast({
+        title: 'Meeting times updated successfully',
+        description: 'Your club meeting times have been updated.',
+      });
+      
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Update failed',
+        description: 'There was a problem updating your meeting times. Please try again.',
+      });
+      console.error('Meeting times update error:', error);
     }
   };
 
@@ -230,6 +303,7 @@ const Profile = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="mb-6">
                   <TabsTrigger value="profile">Club Profile</TabsTrigger>
+                  <TabsTrigger value="meeting-times" disabled={!isApproved}>Meeting Times</TabsTrigger>
                   <TabsTrigger value="volunteer-positions" disabled={!profileExists}>Volunteer Positions</TabsTrigger>
                 </TabsList>
                 
@@ -259,7 +333,6 @@ const Profile = () => {
                   
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      {/* Club Name field - readonly if profile exists */}
                       <FormField
                         control={form.control}
                         name="clubName"
@@ -279,7 +352,6 @@ const Profile = () => {
                         )}
                       />
 
-                      {/* Category field */}
                       <FormField
                         control={form.control}
                         name="category"
@@ -309,7 +381,6 @@ const Profile = () => {
                         )}
                       />
 
-                      {/* Description field */}
                       <FormField
                         control={form.control}
                         name="description"
@@ -331,34 +402,9 @@ const Profile = () => {
                         )}
                       />
 
-                      {/* Meeting Times field */}
-                      <FormField
-                        control={form.control}
-                        name="meetingTimes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Meeting Times</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="e.g., Mondays 7-9pm at Community Center, Thursdays 6-8pm at Local Park"
-                                className="min-h-[80px]"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Please provide details about when and where your club meets. 
-                              Include days, times, and locations.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Contact Information */}
                       <div className="space-y-6">
                         <h3 className="text-lg font-medium">Contact Information</h3>
                         
-                        {/* Contact Email field */}
                         <FormField
                           control={form.control}
                           name="contactEmail"
@@ -373,7 +419,6 @@ const Profile = () => {
                           )}
                         />
 
-                        {/* Contact Phone field - optional */}
                         <FormField
                           control={form.control}
                           name="contactPhone"
@@ -388,7 +433,6 @@ const Profile = () => {
                           )}
                         />
 
-                        {/* Website field - optional */}
                         <FormField
                           control={form.control}
                           name="website"
@@ -404,11 +448,9 @@ const Profile = () => {
                         />
                       </div>
                       
-                      {/* Social Media Links */}
                       <div className="space-y-6">
                         <h3 className="text-lg font-medium">Social Media (Optional)</h3>
                         
-                        {/* Facebook URL field */}
                         <FormField
                           control={form.control}
                           name="facebookUrl"
@@ -425,7 +467,6 @@ const Profile = () => {
                           )}
                         />
                         
-                        {/* Instagram URL field */}
                         <FormField
                           control={form.control}
                           name="instagramUrl"
@@ -442,7 +483,6 @@ const Profile = () => {
                           )}
                         />
                         
-                        {/* Twitter/X URL field */}
                         <FormField
                           control={form.control}
                           name="twitterUrl"
@@ -465,6 +505,35 @@ const Profile = () => {
                       </Button>
                     </form>
                   </Form>
+                </TabsContent>
+
+                <TabsContent value="meeting-times">
+                  {isApproved ? (
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium mb-2">Meeting Times</h3>
+                        <p className="text-gray-600 mb-6">
+                          Set up your club's regular meeting times to help people know when to join.
+                        </p>
+                      </div>
+                      
+                      <Form {...meetingTimesForm}>
+                        <form onSubmit={meetingTimesForm.handleSubmit(onMeetingTimesSubmit)} className="space-y-6">
+                          <MeetingTimesSelector control={meetingTimesForm.control} name="meetingTimes" />
+                          
+                          <Button type="submit" className="bg-egsport-blue hover:bg-egsport-blue/90">
+                            Save Meeting Times
+                          </Button>
+                        </form>
+                      </Form>
+                    </div>
+                  ) : (
+                    <Alert className="bg-yellow-50 border-yellow-200">
+                      <AlertDescription>
+                        Meeting times can only be set up after your club profile has been approved by an admin.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </TabsContent>
                 
                 <TabsContent value="volunteer-positions">

@@ -11,24 +11,8 @@ import Layout from '@/components/Layout';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import MeetingTimesSelector from '@/components/MeetingTimesSelector';
 
-// Define the meeting time schema
-const meetingTimeSchema = z.object({
-  day: z.string().min(1, { message: "Please select a day" }),
-  startTime: z.string().min(1, { message: "Please select a start time" }),
-  endTime: z.string().min(1, { message: "Please select an end time" }),
-}).refine((data) => {
-  if (data.startTime && data.endTime) {
-    return data.startTime < data.endTime;
-  }
-  return true;
-}, {
-  message: "End time must be after start time",
-  path: ["endTime"],
-});
-
-// Define the registration form schema with validation
+// Define the registration form schema with validation (removed meeting times)
 const registerSchema = z.object({
   fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -36,7 +20,6 @@ const registerSchema = z.object({
   password: z.string().min(8, { message: "Password must be at least 8 characters" }),
   confirmPassword: z.string(),
   captchaValue: z.string().min(1, { message: "Please complete the captcha" }),
-  meetingTimes: z.array(meetingTimeSchema).min(1, { message: "Please add at least one meeting time" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -66,7 +49,6 @@ const Register = () => {
       password: "",
       confirmPassword: "",
       captchaValue: "",
-      meetingTimes: [{ day: '', startTime: '', endTime: '' }],
     },
   });
 
@@ -83,17 +65,10 @@ const Register = () => {
     }
 
     try {
-      // Format meeting times for storage
-      const formattedMeetingTimes = data.meetingTimes
-        .filter(mt => mt.day && mt.startTime && mt.endTime)
-        .map(mt => `${mt.day}: ${mt.startTime} - ${mt.endTime}`)
-        .join('; ');
-
-      // Register with Supabase
+      // Register with Supabase (removed meeting_times from metadata)
       await signUp(data.email, data.password, {
         full_name: data.fullName,
         club_name: data.clubName,
-        meeting_times: formattedMeetingTimes,
       });
       
       // Reset the form
@@ -231,9 +206,6 @@ const Register = () => {
                     </FormItem>
                   )}
                 />
-
-                {/* Meeting Times Selector */}
-                <MeetingTimesSelector control={form.control} name="meetingTimes" />
 
                 {/* Password field */}
                 <FormField
