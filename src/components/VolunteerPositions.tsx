@@ -8,15 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+// Dialog related imports removed
 
 import {
   Form,
@@ -68,8 +60,10 @@ const VolunteerPositions = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [positions, setPositions] = useState<Position[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentPosition, setCurrentPosition] = useState<Position | null>(null);
+  // const [isDialogOpen, setIsDialogOpen] = useState(false); // Removed
+  // const [currentPosition, setCurrentPosition] = useState<Position | null>(null); // Removed
+  const [showInlineForm, setShowInlineForm] = useState(false);
+  const [editingPosition, setEditingPosition] = useState<Position | null>(null);
   
   // Initialize form with react-hook-form and zod validation
   const form = useForm<PositionFormValues>({
@@ -123,7 +117,7 @@ const VolunteerPositions = () => {
     try {
       setIsLoading(true);
       
-      if (currentPosition) {
+      if (editingPosition) {
         // Update existing position
         const { error } = await supabase
           .from('club_volunteer_positions')
@@ -137,14 +131,14 @@ const VolunteerPositions = () => {
             contact_info: data.contact_info || null,
             is_live: data.is_live,
           })
-          .eq('id', currentPosition.id)
+          .eq('id', editingPosition.id)
           .eq('club_id', user.id);
           
         if (error) throw error;
         
         // Update local state
         setPositions(positions.map(pos => 
-          pos.id === currentPosition.id ? { ...pos, ...data } : pos
+          pos.id === editingPosition.id ? { ...pos, ...data, id: editingPosition.id, created_at: editingPosition.created_at, updated_at: new Date().toISOString(), club_id: editingPosition.club_id } : pos
         ));
         
         toast({
@@ -183,8 +177,9 @@ const VolunteerPositions = () => {
       }
       
       // Close dialog and reset form
-      setIsDialogOpen(false);
-      setCurrentPosition(null);
+      // setIsDialogOpen(false); // Removed
+      setShowInlineForm(false);
+      setEditingPosition(null);
       form.reset({
         title: "",
         description: "",
@@ -281,8 +276,8 @@ const VolunteerPositions = () => {
   };
 
   // Open edit dialog with position data
-  const openEditDialog = (position: Position) => {
-    setCurrentPosition(position);
+  const handleEditPositionClick = (position: Position) => {
+    setEditingPosition(position);
     form.reset({
       title: position.title,
       description: position.description,
@@ -293,12 +288,12 @@ const VolunteerPositions = () => {
       contact_info: position.contact_info || "",
       is_live: position.is_live,
     });
-    setIsDialogOpen(true);
+    setShowInlineForm(true);
   };
 
   // Open create dialog
-  const openCreateDialog = () => {
-    setCurrentPosition(null);
+  const handleAddPositionClick = () => {
+    setEditingPosition(null);
     form.reset({
       title: "",
       description: "",
@@ -309,7 +304,7 @@ const VolunteerPositions = () => {
       contact_info: "",
       is_live: false,
     });
-    setIsDialogOpen(true);
+    setShowInlineForm(true);
   };
 
   if (isLoading && positions.length === 0) {
@@ -324,112 +319,19 @@ const VolunteerPositions = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Volunteer Positions</h2>
-        <Button onClick={openCreateDialog} className="bg-egsport-blue hover:bg-egsport-blue/90">
+        <Button onClick={handleAddPositionClick} className="bg-egsport-blue hover:bg-egsport-blue/90">
           <PlusCircle className="mr-2 h-4 w-4" /> Add Position
         </Button>
       </div>
 
-      {positions.length === 0 ? (
-        <Alert className="bg-blue-50 border-blue-200">
-          <AlertDescription>
-            You haven't created any volunteer positions yet. 
-            Add positions to advertise roles that need to be filled in your club.
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <div className="grid gap-6">
-          {positions.map((position) => (
-            <Card key={position.id} className={!position.is_live ? "border-dashed opacity-70" : ""}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>{position.title}</CardTitle>
-                    <CardDescription>{position.location || "No location specified"}</CardDescription>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => toggleVisibility(position)}
-                      title={position.is_live ? "Hide position" : "Make position visible"}
-                    >
-                      {position.is_live ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => openEditDialog(position)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleDelete(position.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                {!position.is_live && (
-                  <div className="text-sm text-yellow-600 mt-2">
-                    This position is hidden from public view
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-gray-700">{position.description}</p>
-                </div>
-                
-                {position.responsibilities && (
-                  <div>
-                    <h4 className="font-semibold text-sm">Responsibilities</h4>
-                    <p className="text-gray-700 text-sm">{position.responsibilities}</p>
-                  </div>
-                )}
-                
-                {position.requirements && (
-                  <div>
-                    <h4 className="font-semibold text-sm">Requirements</h4>
-                    <p className="text-gray-700 text-sm">{position.requirements}</p>
-                  </div>
-                )}
-                
-                {position.time_commitment && (
-                  <div>
-                    <h4 className="font-semibold text-sm">Time Commitment</h4>
-                    <p className="text-gray-700 text-sm">{position.time_commitment}</p>
-                  </div>
-                )}
-                
-                {position.contact_info && (
-                  <div>
-                    <h4 className="font-semibold text-sm">Contact</h4>
-                    <p className="text-gray-700 text-sm">{position.contact_info}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Create/Edit Position Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{currentPosition ? "Edit Volunteer Position" : "Create Volunteer Position"}</DialogTitle>
-            <DialogDescription>
-              {currentPosition 
-                ? "Update the details for this volunteer position." 
-                : "Add a new volunteer position to your club."}
-            </DialogDescription>
-          </DialogHeader>
-          
+      {showInlineForm && (
+        <Card className="mb-6 p-6 shadow-md">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <h3 className="text-xl font-semibold mb-4">
+                {editingPosition ? "Edit Volunteer Position" : "Add New Volunteer Position"}
+              </h3>
+              
               {/* Title field */}
               <FormField
                 control={form.control}
@@ -582,25 +484,201 @@ const VolunteerPositions = () => {
                 )}
               />
 
-              <DialogFooter>
+              <div className="flex space-x-2 justify-end">
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
+                  onClick={() => {
+                    setShowInlineForm(false);
+                    setEditingPosition(null);
+                    form.reset({ 
+                      title: "", description: "", responsibilities: "", requirements: "", 
+                      time_commitment: "", location: "", contact_info: "", is_live: false 
+                    });
+                  }}
                 >
                   Cancel
                 </Button>
                 <Button 
                   type="submit" 
                   className="bg-egsport-blue hover:bg-egsport-blue/90"
+                  disabled={isLoading}
                 >
-                  {currentPosition ? "Save Changes" : "Create Position"}
+                  {isLoading ? (editingPosition ? "Saving..." : "Creating...") : (editingPosition ? "Save Changes" : "Create Position")}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
           </Form>
-        </DialogContent>
-      </Dialog>
+        </Card>
+      )}
+
+      {positions.length === 0 && !showInlineForm ? ( // Also hide if form is shown
+        <Alert className="bg-blue-50 border-blue-200">
+          <AlertDescription>
+            You haven't created any volunteer positions yet. 
+            Add positions to advertise roles that need to be filled in your club.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <div className="grid gap-6">
+          {positions.map((position) => (
+            <Card key={position.id} className={!position.is_live ? "border-dashed opacity-70" : ""}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>{position.title}</CardTitle>
+                    <CardDescription>{position.location || "No location specified"}</CardDescription>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => toggleVisibility(position)}
+                      title={position.is_live ? "Hide position" : "Make position visible"}
+                    >
+                      {position.is_live ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleEditPositionClick(position)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleDelete(position.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                {!position.is_live && (
+                  <div className="text-sm text-yellow-600 mt-2">
+                    This position is hidden from public view
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-gray-700">{position.description}</p>
+                </div>
+                
+                {position.responsibilities && (
+                  <div>
+                    <h4 className="font-semibold text-sm">Responsibilities</h4>
+                    <p className="text-gray-700 text-sm">{position.responsibilities}</p>
+                  </div>
+                )}
+                
+                {position.requirements && (
+                  <div>
+                    <h4 className="font-semibold text-sm">Requirements</h4>
+                    <p className="text-gray-700 text-sm">{position.requirements}</p>
+                  </div>
+                )}
+                
+                {position.time_commitment && (
+                  <div>
+                    <h4 className="font-semibold text-sm">Time Commitment</h4>
+                    <p className="text-gray-700 text-sm">{position.time_commitment}</p>
+                  </div>
+                )}
+                
+                {position.contact_info && (
+                  <div>
+                    <h4 className="font-semibold text-sm">Contact</h4>
+                    <p className="text-gray-700 text-sm">{position.contact_info}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* The list of positions is rendered below the form or the alert */}
+      {positions.length > 0 && (
+        <div className="grid gap-6">
+          {positions.map((position) => (
+            <Card key={position.id} className={!position.is_live ? "border-dashed opacity-70" : ""}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>{position.title}</CardTitle>
+                    <CardDescription>{position.location || "No location specified"}</CardDescription>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => toggleVisibility(position)}
+                      title={position.is_live ? "Hide position" : "Make position visible"}
+                    >
+                      {position.is_live ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleEditPositionClick(position)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleDelete(position.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                {!position.is_live && (
+                  <div className="text-sm text-yellow-600 mt-2">
+                    This position is hidden from public view
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-gray-700">{position.description}</p>
+                </div>
+                
+                {position.responsibilities && (
+                  <div>
+                    <h4 className="font-semibold text-sm">Responsibilities</h4>
+                    <p className="text-gray-700 text-sm">{position.responsibilities}</p>
+                  </div>
+                )}
+                
+                {position.requirements && (
+                  <div>
+                    <h4 className="font-semibold text-sm">Requirements</h4>
+                    <p className="text-gray-700 text-sm">{position.requirements}</p>
+                  </div>
+                )}
+                
+                {position.time_commitment && (
+                  <div>
+                    <h4 className="font-semibold text-sm">Time Commitment</h4>
+                    <p className="text-gray-700 text-sm">{position.time_commitment}</p>
+                  </div>
+                )}
+                
+                {position.contact_info && (
+                  <div>
+                    <h4 className="font-semibold text-sm">Contact</h4>
+                    <p className="text-gray-700 text-sm">{position.contact_info}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
