@@ -11,6 +11,22 @@ import Layout from '@/components/Layout';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import MeetingTimesSelector from '@/components/MeetingTimesSelector';
+
+// Define the meeting time schema
+const meetingTimeSchema = z.object({
+  day: z.string().min(1, { message: "Please select a day" }),
+  startTime: z.string().min(1, { message: "Please select a start time" }),
+  endTime: z.string().min(1, { message: "Please select an end time" }),
+}).refine((data) => {
+  if (data.startTime && data.endTime) {
+    return data.startTime < data.endTime;
+  }
+  return true;
+}, {
+  message: "End time must be after start time",
+  path: ["endTime"],
+});
 
 // Define the registration form schema with validation
 const registerSchema = z.object({
@@ -20,6 +36,7 @@ const registerSchema = z.object({
   password: z.string().min(8, { message: "Password must be at least 8 characters" }),
   confirmPassword: z.string(),
   captchaValue: z.string().min(1, { message: "Please complete the captcha" }),
+  meetingTimes: z.array(meetingTimeSchema).min(1, { message: "Please add at least one meeting time" }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -49,6 +66,7 @@ const Register = () => {
       password: "",
       confirmPassword: "",
       captchaValue: "",
+      meetingTimes: [{ day: '', startTime: '', endTime: '' }],
     },
   });
 
@@ -65,10 +83,17 @@ const Register = () => {
     }
 
     try {
+      // Format meeting times for storage
+      const formattedMeetingTimes = data.meetingTimes
+        .filter(mt => mt.day && mt.startTime && mt.endTime)
+        .map(mt => `${mt.day}: ${mt.startTime} - ${mt.endTime}`)
+        .join('; ');
+
       // Register with Supabase
       await signUp(data.email, data.password, {
         full_name: data.fullName,
         club_name: data.clubName,
+        meeting_times: formattedMeetingTimes,
       });
       
       // Reset the form
@@ -153,7 +178,7 @@ const Register = () => {
   return (
     <Layout>
       <div className="egsport-container py-12">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-2xl mx-auto">
           <div className="egsport-card">
             <h1 className="text-2xl font-bold mb-6 text-center">Register Your Club</h1>
             <p className="text-gray-600 mb-6 text-center">
@@ -206,6 +231,9 @@ const Register = () => {
                     </FormItem>
                   )}
                 />
+
+                {/* Meeting Times Selector */}
+                <MeetingTimesSelector control={form.control} name="meetingTimes" />
 
                 {/* Password field */}
                 <FormField
