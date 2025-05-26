@@ -53,7 +53,7 @@ const Clubs = () => {
   const [volunteerPositions, setVolunteerPositions] = useState<VolunteerPosition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
   const [viewType, setViewType] = useState<'clubs' | 'volunteer'>('clubs');
@@ -62,6 +62,7 @@ const Clubs = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log('Fetching clubs data...');
         // Fetch clubs
         const { data: clubsData, error: clubsError } = await supabase
           .from('club_profiles')
@@ -70,18 +71,23 @@ const Clubs = () => {
           .order('club_name', { ascending: true });
         
         if (clubsError) {
+          console.error('Error fetching clubs:', clubsError);
           throw clubsError;
         }
+        
+        console.log('Clubs data received:', clubsData);
         
         if (clubsData) {
           setClubs(clubsData);
           setFilteredClubs(clubsData);
           
           // Extract unique categories for the filter
-          const uniqueCategories = Array.from(new Set(clubsData.map(club => club.category)));
+          const uniqueCategories = Array.from(new Set(clubsData.map(club => club.category).filter(Boolean)));
+          console.log('Categories found:', uniqueCategories);
           setCategories(uniqueCategories);
         }
 
+        console.log('Fetching volunteer positions...');
         // Fetch volunteer positions
         const { data: positionsData, error: positionsError } = await supabase
           .from('club_volunteer_positions')
@@ -90,8 +96,11 @@ const Clubs = () => {
           .order('created_at', { ascending: false });
         
         if (positionsError) {
+          console.error('Error fetching positions:', positionsError);
           throw positionsError;
         }
+        
+        console.log('Volunteer positions received:', positionsData);
         
         if (positionsData) {
           setVolunteerPositions(positionsData);
@@ -119,7 +128,7 @@ const Clubs = () => {
       );
     }
     
-    if (categoryFilter) {
+    if (categoryFilter && categoryFilter !== 'all') {
       result = result.filter(club => club.category === categoryFilter);
     }
     
@@ -136,8 +145,7 @@ const Clubs = () => {
   
   const resetFilters = () => {
     setSearchQuery('');
-    setCategoryFilter('');
-    setFilteredClubs(clubs);
+    setCategoryFilter('all');
   };
 
   // Get club positions
@@ -215,7 +223,7 @@ const Clubs = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                {(searchQuery || categoryFilter) && (
+                {(searchQuery || (categoryFilter && categoryFilter !== 'all')) && (
                   <button 
                     onClick={resetFilters}
                     className="bg-gray-100 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors"
@@ -401,22 +409,22 @@ const Clubs = () => {
                             </div>
                           )}
                           
-                          {position.contact_info && (
+                          {(position.contact_info || getClubById(selectedClubId)?.contact_email) && (
                             <div className="flex items-start">
                               <Mail className="h-4 w-4 mr-2 mt-0.5 text-gray-500" />
                               <div>
                                 <h4 className="font-medium text-sm">Contact:</h4>
-                                <p className="text-gray-700 text-sm">{position.contact_info}</p>
+                                <a 
+                                  href={`mailto:${position.contact_info || getClubById(selectedClubId)?.contact_email}`}
+                                  className="text-blue-600 hover:underline text-sm"
+                                >
+                                  {position.contact_info || getClubById(selectedClubId)?.contact_email}
+                                </a>
                               </div>
                             </div>
                           )}
                         </div>
                       </CardContent>
-                      <CardFooter className="flex justify-end">
-                        <Button className="bg-blue-600 hover:bg-blue-700">
-                          Apply Now
-                        </Button>
-                      </CardFooter>
                     </Card>
                   ))}
                 </div>
@@ -489,9 +497,12 @@ const Clubs = () => {
                                 <Mail className="h-4 w-4 mr-2 mt-0.5 text-gray-500" />
                                 <div>
                                   <h4 className="font-medium text-sm">Contact:</h4>
-                                  <p className="text-gray-700 text-sm">
+                                  <a 
+                                    href={`mailto:${position.contact_info || club?.contact_email}`}
+                                    className="text-blue-600 hover:underline text-sm"
+                                  >
                                     {position.contact_info || club?.contact_email}
-                                  </p>
+                                  </a>
                                 </div>
                               </div>
                             )}
@@ -503,9 +514,6 @@ const Clubs = () => {
                             onClick={() => showClubPositions(position.club_id)}
                           >
                             View All {club?.club_name} Positions
-                          </Button>
-                          <Button className="bg-blue-600 hover:bg-blue-700">
-                            Apply Now
                           </Button>
                         </CardFooter>
                       </Card>
