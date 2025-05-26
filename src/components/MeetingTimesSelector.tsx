@@ -55,8 +55,35 @@ const MeetingTimesSelector: React.FC<MeetingTimesSelectorProps> = ({ control, na
 
         const updateMeetingTime = (index: number, key: keyof MeetingTime, value: string) => {
           const newMeetingTimes = [...meetingTimes];
-          newMeetingTimes[index][key] = value;
-          field.onChange(newMeetingTimes);
+          newMeetingTimes[index][key] = value; // Apply change immediately to the cloned array
+
+          const currentSession = newMeetingTimes[index]; // Session with the new value applied
+          const { startTime, endTime } = currentSession;
+
+          if (key === 'startTime' || key === 'endTime') {
+            if (startTime && endTime) { // Both times are selected, so validate
+              const startIndex = TIME_OPTIONS.indexOf(startTime);
+              const endIndex = TIME_OPTIONS.indexOf(endTime);
+
+              if (startIndex !== -1 && endIndex !== -1 && startIndex >= endIndex) {
+                // Invalid: Start time is not strictly before end time
+                control.setError(`${name}.${index}.endTime`, { // Set error on endTime field
+                  type: 'manual',
+                  message: 'End time must be after start time.',
+                });
+              } else {
+                // Valid or became valid
+                control.clearErrors(`${name}.${index}.startTime`); // Clear for both, just in case
+                control.clearErrors(`${name}.${index}.endTime`);
+              }
+            } else {
+              // One or both times are not set, so not an "invalid range" yet. Clear any existing errors.
+              control.clearErrors(`${name}.${index}.startTime`);
+              control.clearErrors(`${name}.${index}.endTime`);
+            }
+          }
+          
+          field.onChange(newMeetingTimes); // Update the form state with the (potentially invalid) new values
         };
 
         return (
@@ -99,44 +126,70 @@ const MeetingTimesSelector: React.FC<MeetingTimesSelectorProps> = ({ control, na
                       </Select>
                     </div>
 
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">Start Time</label>
-                      <Select
-                        value={meetingTime.startTime}
-                        onValueChange={(value) => updateMeetingTime(index, 'startTime', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Start time" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {TIME_OPTIONS.map((time) => (
-                            <SelectItem key={time} value={time}>
-                              {time}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <FormField
+                      control={control}
+                      name={`${name}.${index}.startTime`}
+                      render={({ field: startTimeField }) => (
+                        <FormItem>
+                          <label className="text-sm font-medium mb-1 block">Start Time</label>
+                          <Select
+                            value={startTimeField.value}
+                            onValueChange={(value) => {
+                              startTimeField.onChange(value);
+                              updateMeetingTime(index, 'startTime', value);
+                            }}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Start time" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {TIME_OPTIONS.map((time) => (
+                                <SelectItem key={time} value={time}>
+                                  {time}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                    <div>
-                      <label className="text-sm font-medium mb-1 block">End Time</label>
-                      <Select
-                        value={meetingTime.endTime}
-                        onValueChange={(value) => updateMeetingTime(index, 'endTime', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="End time" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {TIME_OPTIONS.map((time) => (
-                            <SelectItem key={time} value={time}>
-                              {time}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <FormField
+                      control={control}
+                      name={`${name}.${index}.endTime`}
+                      render={({ field: endTimeField }) => (
+                        <FormItem>
+                          <label className="text-sm font-medium mb-1 block">End Time</label>
+                          <Select
+                            value={endTimeField.value}
+                            onValueChange={(value) => {
+                              endTimeField.onChange(value);
+                              updateMeetingTime(index, 'endTime', value);
+                            }}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="End time" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {TIME_OPTIONS.map((time) => (
+                                <SelectItem key={time} value={time}>
+                                  {time}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
+                  {/* General error for the session can be shown here if preferred */}
+                  {/* <FormMessage name={`${name}.${index}.endTime`} /> */} 
                 </div>
               ))}
 
@@ -150,7 +203,9 @@ const MeetingTimesSelector: React.FC<MeetingTimesSelectorProps> = ({ control, na
                 Add Another Meeting Time
               </Button>
             </div>
-            <FormMessage />
+            {/* This FormMessage is for the whole field array, not individual items.
+                Errors for specific time fields are now inside the map. */}
+            {/* <FormMessage /> */} 
           </FormItem>
         );
       }}
