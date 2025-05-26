@@ -418,7 +418,7 @@ const VolunteerPositions = () => {
 
       {/* Create/Edit Position Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{currentPosition ? "Edit Volunteer Position" : "Create Volunteer Position"}</DialogTitle>
             <DialogDescription>
