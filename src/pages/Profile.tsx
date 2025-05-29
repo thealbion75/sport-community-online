@@ -228,6 +228,24 @@ const Profile = () => {
   const onMeetingTimesSubmit = async (data: { meetingTimes: MeetingTime[] }) => {
     if (!user || !isApproved) return;
 
+    // Check for validation errors from MeetingTimesSelector
+    if (meetingTimesForm.formState.errors.meetingTimes) {
+      // Iterate through the errors array or object to see if any specific error messages are set.
+      // react-hook-form might structure errors for field arrays as an array of objects.
+      const errorsExist = Array.isArray(meetingTimesForm.formState.errors.meetingTimes)
+        ? meetingTimesForm.formState.errors.meetingTimes.some(errorSet => errorSet && Object.keys(errorSet).length > 0)
+        : Object.keys(meetingTimesForm.formState.errors.meetingTimes).length > 0;
+
+      if (errorsExist) {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid Meeting Times',
+          description: 'Please correct the errors in the meeting times before saving.',
+        });
+        return; // Prevent submission
+      }
+    }
+
     try {
       // Delete existing meeting times
       await supabase

@@ -6,6 +6,7 @@ import { Facebook, Instagram, Twitter, Globe, Mail, Phone, Clock, MapPin } from 
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MeetingTime } from '@/integrations/supabase/types';
 import {
   Card,
   CardContent,
@@ -55,6 +56,7 @@ const Clubs = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
+  const [allMeetingTimes, setAllMeetingTimes] = useState<MeetingTime[]>([]);
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
   const [viewType, setViewType] = useState<'clubs' | 'volunteer'>('clubs');
 
@@ -99,6 +101,21 @@ const Clubs = () => {
         } else {
           console.log('Volunteer positions fetched successfully:', positionsData);
           setVolunteerPositions(positionsData || []);
+        }
+
+        // Fetch meeting times
+        const { data: meetingTimesData, error: meetingTimesError } = await supabase
+          .from('club_meeting_times')
+          .select('*')
+          .order('club_id', { ascending: true })
+          .order('day_of_week', { ascending: true })
+          .order('start_time', { ascending: true });
+
+        if (meetingTimesError) {
+          console.error('Error fetching meeting times:', meetingTimesError);
+        } else {
+          console.log('Meeting times fetched successfully:', meetingTimesData);
+          setAllMeetingTimes(meetingTimesData || []);
         }
       } catch (error) {
         console.error('Error in fetchData:', error);
@@ -163,6 +180,39 @@ const Clubs = () => {
   const backToClubs = () => {
     setSelectedClubId(null);
     setViewType('clubs');
+  };
+
+  const formatMeetingTimesForDisplay = (clubId: string): string => {
+    const clubTimes = allMeetingTimes.filter(time => time.club_id === clubId);
+
+    if (clubTimes.length === 0) {
+      return "Meeting times not specified.";
+    }
+
+    // Define the order of days
+    const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+    const groupedByDay: { [key: string]: string[] } = {};
+
+    clubTimes.forEach(time => {
+      if (!groupedByDay[time.day_of_week]) {
+        groupedByDay[time.day_of_week] = [];
+      }
+      // Ensure start_time and end_time are defined and not null
+      const startTime = time.start_time ? time.start_time.slice(0, 5) : "N/A";
+      const endTime = time.end_time ? time.end_time.slice(0, 5) : "N/A";
+      groupedByDay[time.day_of_week].push(`${startTime} - ${endTime}`);
+    });
+
+    const formattedStrings = dayOrder
+      .filter(day => groupedByDay[day]) // Only include days that have meetings
+      .map(day => {
+        // Capitalize the first letter of the day and add 's' if it doesn't end with 's'
+        const dayDisplay = day.endsWith('s') ? day : `${day}s`;
+        return `${dayDisplay}: ${groupedByDay[day].join(', ')}`;
+      });
+
+    return formattedStrings.join('; ');
   };
 
   if (isLoading) {
@@ -274,7 +324,7 @@ const Clubs = () => {
                           
                           <div className="mb-3">
                             <h3 className="font-semibold text-sm text-gray-600 mb-1">Meeting Times</h3>
-                            <p className="text-sm">{club.meeting_times}</p>
+                            <p className="text-sm">{formatMeetingTimesForDisplay(club.id)}</p>
                           </div>
                           
                           <div className="text-sm space-y-1">
