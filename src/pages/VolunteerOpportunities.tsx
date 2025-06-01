@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import { MapPin, Clock, Mail, Phone, ExternalLink, Navigation } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 
 /**
  * Interface for volunteer position with club information
@@ -44,6 +44,7 @@ const VolunteerOpportunities = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchParams] = useSearchParams();
 
   // Fetch all live volunteer positions with club information
   useEffect(() => {
@@ -116,6 +117,14 @@ const VolunteerOpportunities = () => {
     fetchVolunteerOpportunities();
   }, []);
 
+  // Set initial search term from URL parameter
+  useEffect(() => {
+    const clubParam = searchParams.get('club');
+    if (clubParam) {
+      setSearchTerm(clubParam);
+    }
+  }, [searchParams]);
+
   // Filter opportunities based on search term and category
   useEffect(() => {
     let filtered = opportunities;
@@ -173,6 +182,11 @@ const VolunteerOpportunities = () => {
             <p className="text-xl text-gray-600">
               Find meaningful ways to contribute to your local sports community
             </p>
+            {searchParams.get('club') && (
+              <p className="text-sm text-gray-500 mt-2">
+                Showing opportunities for: <span className="font-medium">{searchParams.get('club')}</span>
+              </p>
+            )}
           </div>
 
           {/* Search and Filter Controls */}

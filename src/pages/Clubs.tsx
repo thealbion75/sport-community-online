@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -181,10 +180,15 @@ const Clubs = () => {
                       <div className="flex flex-col items-end gap-2">
                         <Badge variant="secondary">{club.category}</Badge>
                         {clubVolunteerCounts[club.id] && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            <Users className="h-3 w-3 mr-1" />
-                            {clubVolunteerCounts[club.id]} volunteer role{clubVolunteerCounts[club.id] !== 1 ? 's' : ''}
-                          </Badge>
+                          <Link 
+                            to={`/volunteer-opportunities?club=${encodeURIComponent(club.club_name)}`}
+                            className="transition-transform hover:scale-105"
+                          >
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 cursor-pointer">
+                              <Users className="h-3 w-3 mr-1" />
+                              {clubVolunteerCounts[club.id]} volunteer role{clubVolunteerCounts[club.id] !== 1 ? 's' : ''}
+                            </Badge>
+                          </Link>
                         )}
                       </div>
                     </div>

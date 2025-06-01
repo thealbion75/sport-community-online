@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Clubs from "./pages/Clubs";
 import VolunteerOpportunities from "./pages/VolunteerOpportunities";
+import SportsCouncil from "./pages/SportsCouncil";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/clubs" element={<Clubs />} />
             <Route path="/volunteer-opportunities" element={<VolunteerOpportunities />} />
+            <Route path="/sports-council" element={<SportsCouncil />} />
             
             {/* Protected routes */}
             <Route path="/profile" element={<Profile />} />

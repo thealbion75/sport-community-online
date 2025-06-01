@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Users, Building, Home } from 'lucide-react';
+import { Users, Building, Home, Award } from 'lucide-react';
 import AuthenticatedNav from './AuthenticatedNav';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -66,6 +66,18 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 <Users className="h-4 w-4" />
                 <span>Volunteer</span>
               </Link>
+
+              <Link 
+                to="/sports-council" 
+                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  location.pathname === '/sports-council' 
+                    ? 'bg-egsport-blue text-white' 
+                    : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                }`}
+              >
+                <Award className="h-4 w-4" />
+                <span>Sports Council</span>
+              </Link>
             </div>
 
             {/* Authentication Section */}
@@ -126,6 +138,18 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               >
                 <Users className="h-4 w-4" />
                 <span>Volunteer Opportunities</span>
+              </Link>
+
+              <Link 
+                to="/sports-council" 
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  location.pathname === '/sports-council' 
+                    ? 'bg-egsport-blue text-white' 
+                    : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                }`}
+              >
+                <Award className="h-4 w-4" />
+                <span>Sports Council</span>
               </Link>
             </div>
           </div>
