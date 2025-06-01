@@ -1,58 +1,37 @@
-
 import React, { useEffect, useState } from 'react';
-import Layout from '@/components/Layout';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { Facebook, Instagram, Twitter, Globe } from 'lucide-react';
-
-interface ClubProfile {
-  id: string;
-  club_name: string;
-  category: string;
-  contact_email: string;
-  contact_phone: string | null;
-  description: string;
-  website: string | null;
-  facebook_url: string | null;
-  twitter_url: string | null;
-  instagram_url: string | null;
-  meeting_times: string;
-  approved: boolean;
-  created_at: string;
-}
+import { useAuth } from '@/contexts/AuthContext';
+import { ClubProfile } from '@/types/club';
 
 const Admin = () => {
-  const [pendingClubs, setPendingClubs] = useState<ClubProfile[]>([]);
-  const [approvedClubs, setApprovedClubs] = useState<ClubProfile[]>([]);
+  const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const [pendingClubs, setPendingClubs] = useState<ClubProfile[]>([]);
+  const [approvedClubs, setApprovedClubs] = useState<ClubProfile[]>([]);
 
-  // Check if the current user is an admin
+  // Check if user is admin
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user) return;
-
+      
       try {
-        const { data, error } = await supabase
-          .from('admin_roles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single();
+        const { data, error } = await supabase.rpc('is_admin', { user_id: user.id });
         
         if (error) {
           console.error('Error checking admin status:', error);
-          setIsAdmin(false);
           return;
         }
         
-        setIsAdmin(data?.is_admin || false);
+        setIsAdmin(data);
       } catch (error) {
         console.error('Error checking admin status:', error);
-        setIsAdmin(false);
       }
     };
 
@@ -61,29 +40,26 @@ const Admin = () => {
 
   // Fetch club profiles
   useEffect(() => {
-    const fetchClubProfiles = async () => {
-      if (!user || !isAdmin) return;
-
+    const fetchClubs = async () => {
       try {
         const { data, error } = await supabase
           .from('club_profiles')
           .select('*')
           .order('created_at', { ascending: false });
         
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
         
-        if (data) {
-          setPendingClubs(data.filter(club => !club.approved));
-          setApprovedClubs(data.filter(club => club.approved));
-        }
+        const pending = data?.filter(club => !club.approved) || [];
+        const approved = data?.filter(club => club.approved) || [];
+        
+        setPendingClubs(pending);
+        setApprovedClubs(approved);
       } catch (error) {
-        console.error('Error fetching club profiles:', error);
+        console.error('Error fetching clubs:', error);
         toast({
           variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to load club profiles.',
+          title: 'Failed to load clubs',
+          description: 'There was a problem loading the club data.',
         });
       } finally {
         setIsLoading(false);
@@ -91,100 +67,73 @@ const Admin = () => {
     };
 
     if (isAdmin) {
-      fetchClubProfiles();
+      fetchClubs();
     } else {
       setIsLoading(false);
     }
-  }, [user, isAdmin]);
+  }, [isAdmin]);
 
-  const approveClub = async (id: string) => {
+  // Approve a club
+  const handleApprove = async (clubId: string) => {
     try {
       const { error } = await supabase
         .from('club_profiles')
         .update({ approved: true })
-        .eq('id', id);
+        .eq('id', clubId);
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
-      // Update local state
-      const updatedClub = pendingClubs.find(club => club.id === id);
-      if (updatedClub) {
-        setPendingClubs(pendingClubs.filter(club => club.id !== id));
-        setApprovedClubs([{ ...updatedClub, approved: true }, ...approvedClubs]);
+      // Move club from pending to approved
+      const clubToMove = pendingClubs.find(club => club.id === clubId);
+      if (clubToMove) {
+        setPendingClubs(pendingClubs.filter(club => club.id !== clubId));
+        setApprovedClubs([{ ...clubToMove, approved: true }, ...approvedClubs]);
       }
       
       toast({
         title: 'Club approved',
-        description: 'The club profile has been approved and is now publicly visible.',
+        description: 'The club has been successfully approved.',
       });
     } catch (error) {
       console.error('Error approving club:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to approve club profile.',
+        title: 'Approval failed',
+        description: 'There was a problem approving the club.',
       });
     }
   };
 
-  const revokeApproval = async (id: string) => {
+  // Reject/unapprove a club
+  const handleReject = async (clubId: string) => {
     try {
       const { error } = await supabase
         .from('club_profiles')
         .update({ approved: false })
-        .eq('id', id);
+        .eq('id', clubId);
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
-      // Update local state
-      const updatedClub = approvedClubs.find(club => club.id === id);
-      if (updatedClub) {
-        setApprovedClubs(approvedClubs.filter(club => club.id !== id));
-        setPendingClubs([{ ...updatedClub, approved: false }, ...pendingClubs]);
+      // Move club from approved to pending if it was approved
+      const clubToMove = approvedClubs.find(club => club.id === clubId);
+      if (clubToMove) {
+        setApprovedClubs(approvedClubs.filter(club => club.id !== clubId));
+        setPendingClubs([{ ...clubToMove, approved: false }, ...pendingClubs]);
       }
       
       toast({
-        title: 'Approval revoked',
-        description: 'The club profile is no longer publicly visible.',
+        title: 'Club status updated',
+        description: 'The club approval status has been updated.',
       });
     } catch (error) {
-      console.error('Error revoking approval:', error);
+      console.error('Error updating club status:', error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to revoke approval for club profile.',
+        title: 'Update failed',
+        description: 'There was a problem updating the club status.',
       });
     }
   };
-
-  const SocialLinks = ({ club }: { club: ClubProfile }) => (
-    <div className="flex space-x-2 mt-2">
-      {club.website && (
-        <a href={club.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-700">
-          <Globe className="h-4 w-4" />
-        </a>
-      )}
-      {club.facebook_url && (
-        <a href={club.facebook_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-          <Facebook className="h-4 w-4" />
-        </a>
-      )}
-      {club.instagram_url && (
-        <a href={club.instagram_url} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:text-pink-800">
-          <Instagram className="h-4 w-4" />
-        </a>
-      )}
-      {club.twitter_url && (
-        <a href={club.twitter_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-600">
-          <Twitter className="h-4 w-4" />
-        </a>
-      )}
-    </div>
-  );
 
   if (isLoading) {
     return (
@@ -202,9 +151,11 @@ const Admin = () => {
     return (
       <Layout>
         <div className="egsport-container py-12">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-            <p className="text-gray-600">You do not have permission to access the admin page.</p>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+            <p className="text-gray-600">
+              You do not have permission to view this page.
+            </p>
           </div>
         </div>
       </Layout>
@@ -212,84 +163,77 @@ const Admin = () => {
   }
 
   return (
-    <Layout>
-      <div className="egsport-container py-12">
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
-          
-          <div className="space-y-12">
-            {/* Pending Approvals Section */}
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Pending Approvals</h2>
+    <ProtectedRoute>
+      <Layout>
+        <div className="egsport-container py-12">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+
+            {/* Pending Clubs */}
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">Pending Clubs</h2>
               {pendingClubs.length === 0 ? (
-                <p className="text-gray-500 italic">No pending club approvals</p>
+                <p className="text-gray-600">No clubs are currently pending approval.</p>
               ) : (
-                <div className="space-y-4">
+                <div className="grid gap-4">
                   {pendingClubs.map((club) => (
-                    <div key={club.id} className="border rounded-lg p-6 bg-white shadow-sm">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-lg font-medium">{club.club_name}</h3>
-                          <p className="text-sm text-gray-500">Sport: {club.category}</p>
-                          <p className="text-sm text-gray-500">
-                            Contact: {club.contact_email} 
-                            {club.contact_phone && ` | ${club.contact_phone}`}
-                          </p>
-                          <p className="mt-2">{club.description}</p>
-                          <p className="text-sm text-gray-500 mt-2">Meeting times: {club.meeting_times}</p>
-                          <SocialLinks club={club} />
-                        </div>
-                        <Button 
-                          onClick={() => approveClub(club.id)}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
+                    <Card key={club.id}>
+                      <CardHeader>
+                        <CardTitle>{club.club_name}</CardTitle>
+                        <CardDescription>{club.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p>Category: {club.category}</p>
+                        <p>Contact Email: {club.contact_email}</p>
+                      </CardContent>
+                      <div className="flex justify-end space-x-2 p-4">
+                        <Button onClick={() => handleApprove(club.id)} className="bg-green-500 hover:bg-green-700 text-white">
                           Approve
                         </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {/* Approved Clubs Section */}
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Approved Clubs</h2>
-              {approvedClubs.length === 0 ? (
-                <p className="text-gray-500 italic">No approved clubs</p>
-              ) : (
-                <div className="space-y-4">
-                  {approvedClubs.map((club) => (
-                    <div key={club.id} className="border rounded-lg p-6 bg-white shadow-sm">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-lg font-medium">{club.club_name}</h3>
-                          <p className="text-sm text-gray-500">Sport: {club.category}</p>
-                          <p className="text-sm text-gray-500">
-                            Contact: {club.contact_email} 
-                            {club.contact_phone && ` | ${club.contact_phone}`}
-                          </p>
-                          <p className="mt-2">{club.description}</p>
-                          <p className="text-sm text-gray-500 mt-2">Meeting times: {club.meeting_times}</p>
-                          <SocialLinks club={club} />
-                        </div>
-                        <Button 
-                          onClick={() => revokeApproval(club.id)}
-                          variant="outline"
-                          className="border-red-500 text-red-500 hover:bg-red-50"
-                        >
-                          Revoke Approval
+                        <Button onClick={() => handleReject(club.id)} className="bg-red-500 hover:bg-red-700 text-white">
+                          Reject
                         </Button>
                       </div>
-                    </div>
+                    </Card>
                   ))}
                 </div>
               )}
-            </div>
+            </section>
+
+            {/* Approved Clubs */}
+            <section>
+              <h2 className="text-2xl font-semibold mb-4">Approved Clubs</h2>
+              {approvedClubs.length === 0 ? (
+                <p className="text-gray-600">No clubs have been approved yet.</p>
+              ) : (
+                <div className="grid gap-4">
+                  {approvedClubs.map((club) => (
+                    <Card key={club.id}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle>{club.club_name}</CardTitle>
+                          <Badge variant="secondary">Approved</Badge>
+                        </div>
+                        <CardDescription>{club.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p>Category: {club.category}</p>
+                        <p>Contact Email: {club.contact_email}</p>
+                      </CardContent>
+                      <div className="flex justify-end p-4">
+                        <Button onClick={() => handleReject(club.id)} className="bg-red-500 hover:bg-red-700 text-white">
+                          Unapprove
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
         </div>
-      </div>
-    </Layout>
+      </Layout>
+    </ProtectedRoute>
   );
 };
 

@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Control } from 'react-hook-form';
+import { Control, useFormContext } from 'react-hook-form';
 import { Plus, Trash2 } from 'lucide-react';
 
 interface MeetingTime {
@@ -36,6 +36,8 @@ const TIME_OPTIONS = [
 ];
 
 const MeetingTimesSelector: React.FC<MeetingTimesSelectorProps> = ({ control, name }) => {
+  const { clearErrors, setError } = useFormContext();
+
   return (
     <FormField
       control={control}
@@ -55,35 +57,32 @@ const MeetingTimesSelector: React.FC<MeetingTimesSelectorProps> = ({ control, na
 
         const updateMeetingTime = (index: number, key: keyof MeetingTime, value: string) => {
           const newMeetingTimes = [...meetingTimes];
-          newMeetingTimes[index][key] = value; // Apply change immediately to the cloned array
+          newMeetingTimes[index][key] = value;
 
-          const currentSession = newMeetingTimes[index]; // Session with the new value applied
+          const currentSession = newMeetingTimes[index];
           const { startTime, endTime } = currentSession;
 
           if (key === 'startTime' || key === 'endTime') {
-            if (startTime && endTime) { // Both times are selected, so validate
+            if (startTime && endTime) {
               const startIndex = TIME_OPTIONS.indexOf(startTime);
               const endIndex = TIME_OPTIONS.indexOf(endTime);
 
               if (startIndex !== -1 && endIndex !== -1 && startIndex >= endIndex) {
-                // Invalid: Start time is not strictly before end time
-                control.setError(`${name}.${index}.endTime`, { // Set error on endTime field
+                setError(`${name}.${index}.endTime`, {
                   type: 'manual',
                   message: 'End time must be after start time.',
                 });
               } else {
-                // Valid or became valid
-                control.clearErrors(`${name}.${index}.startTime`); // Clear for both, just in case
-                control.clearErrors(`${name}.${index}.endTime`);
+                clearErrors(`${name}.${index}.startTime`);
+                clearErrors(`${name}.${index}.endTime`);
               }
             } else {
-              // One or both times are not set, so not an "invalid range" yet. Clear any existing errors.
-              control.clearErrors(`${name}.${index}.startTime`);
-              control.clearErrors(`${name}.${index}.endTime`);
+              clearErrors(`${name}.${index}.startTime`);
+              clearErrors(`${name}.${index}.endTime`);
             }
           }
           
-          field.onChange(newMeetingTimes); // Update the form state with the (potentially invalid) new values
+          field.onChange(newMeetingTimes);
         };
 
         return (
@@ -188,8 +187,6 @@ const MeetingTimesSelector: React.FC<MeetingTimesSelectorProps> = ({ control, na
                       )}
                     />
                   </div>
-                  {/* General error for the session can be shown here if preferred */}
-                  {/* <FormMessage name={`${name}.${index}.endTime`} /> */} 
                 </div>
               ))}
 
@@ -203,9 +200,6 @@ const MeetingTimesSelector: React.FC<MeetingTimesSelectorProps> = ({ control, na
                 Add Another Meeting Time
               </Button>
             </div>
-            {/* This FormMessage is for the whole field array, not individual items.
-                Errors for specific time fields are now inside the map. */}
-            {/* <FormMessage /> */} 
           </FormItem>
         );
       }}
