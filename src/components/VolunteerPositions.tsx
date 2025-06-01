@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -7,8 +6,6 @@ import { PlusCircle, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-
-// Dialog related imports removed
 
 import {
   Form,
@@ -56,12 +53,21 @@ interface Position extends PositionFormValues {
   club_id: string;
 }
 
+/**
+ * VolunteerPositions Component
+ * 
+ * Allows club administrators to create, edit, and manage volunteer positions.
+ * Features:
+ * - Add new volunteer positions with detailed information
+ * - Edit existing positions
+ * - Toggle position visibility (live/hidden)
+ * - Delete positions
+ * - Form validation using react-hook-form and zod
+ */
 const VolunteerPositions = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [positions, setPositions] = useState<Position[]>([]);
-  // const [isDialogOpen, setIsDialogOpen] = useState(false); // Removed
-  // const [currentPosition, setCurrentPosition] = useState<Position | null>(null); // Removed
   const [showInlineForm, setShowInlineForm] = useState(false);
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
   
@@ -80,7 +86,7 @@ const VolunteerPositions = () => {
     },
   });
 
-  // Fetch volunteer positions
+  // Fetch volunteer positions from database
   useEffect(() => {
     const fetchPositions = async () => {
       if (!user) return;
@@ -110,7 +116,7 @@ const VolunteerPositions = () => {
     fetchPositions();
   }, [user]);
 
-  // Handle form submission for create/edit
+  // Handle form submission for create/edit operations
   const onSubmit = async (data: PositionFormValues) => {
     if (!user) return;
     
@@ -138,7 +144,7 @@ const VolunteerPositions = () => {
         
         // Update local state
         setPositions(positions.map(pos => 
-          pos.id === editingPosition.id ? { ...pos, ...data, id: editingPosition.id, created_at: editingPosition.created_at, updated_at: new Date().toISOString(), club_id: editingPosition.club_id } : pos
+          pos.id === editingPosition.id ? { ...pos, ...data, updated_at: new Date().toISOString() } : pos
         ));
         
         toast({
@@ -176,8 +182,7 @@ const VolunteerPositions = () => {
         });
       }
       
-      // Close dialog and reset form
-      // setIsDialogOpen(false); // Removed
+      // Close form and reset
       setShowInlineForm(false);
       setEditingPosition(null);
       form.reset({
@@ -203,7 +208,7 @@ const VolunteerPositions = () => {
     }
   };
 
-  // Handle position deletion
+  // Handle position deletion with confirmation
   const handleDelete = async (positionId: string) => {
     if (!user || !window.confirm('Are you sure you want to delete this volunteer position?')) return;
     
@@ -237,7 +242,7 @@ const VolunteerPositions = () => {
     }
   };
 
-  // Handle toggling position visibility (is_live)
+  // Toggle position visibility (live/hidden status)
   const toggleVisibility = async (position: Position) => {
     if (!user) return;
     
@@ -275,7 +280,7 @@ const VolunteerPositions = () => {
     }
   };
 
-  // Open edit dialog with position data
+  // Open edit form with existing position data
   const handleEditPositionClick = (position: Position) => {
     setEditingPosition(position);
     form.reset({
@@ -291,7 +296,7 @@ const VolunteerPositions = () => {
     setShowInlineForm(true);
   };
 
-  // Open create dialog
+  // Open create form with empty data
   const handleAddPositionClick = () => {
     setEditingPosition(null);
     form.reset({
@@ -324,6 +329,7 @@ const VolunteerPositions = () => {
         </Button>
       </div>
 
+      {/* Inline Form for Adding/Editing Positions */}
       {showInlineForm && (
         <Card className="mb-6 p-6 shadow-md">
           <Form {...form}>
@@ -512,7 +518,8 @@ const VolunteerPositions = () => {
         </Card>
       )}
 
-      {positions.length === 0 && !showInlineForm ? ( // Also hide if form is shown
+      {/* Display Empty State or Positions List */}
+      {positions.length === 0 && !showInlineForm ? (
         <Alert className="bg-blue-50 border-blue-200">
           <AlertDescription>
             You haven't created any volunteer positions yet. 
@@ -520,87 +527,6 @@ const VolunteerPositions = () => {
           </AlertDescription>
         </Alert>
       ) : (
-        <div className="grid gap-6">
-          {positions.map((position) => (
-            <Card key={position.id} className={!position.is_live ? "border-dashed opacity-70" : ""}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>{position.title}</CardTitle>
-                    <CardDescription>{position.location || "No location specified"}</CardDescription>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => toggleVisibility(position)}
-                      title={position.is_live ? "Hide position" : "Make position visible"}
-                    >
-                      {position.is_live ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleEditPositionClick(position)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleDelete(position.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                {!position.is_live && (
-                  <div className="text-sm text-yellow-600 mt-2">
-                    This position is hidden from public view
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-gray-700">{position.description}</p>
-                </div>
-                
-                {position.responsibilities && (
-                  <div>
-                    <h4 className="font-semibold text-sm">Responsibilities</h4>
-                    <p className="text-gray-700 text-sm">{position.responsibilities}</p>
-                  </div>
-                )}
-                
-                {position.requirements && (
-                  <div>
-                    <h4 className="font-semibold text-sm">Requirements</h4>
-                    <p className="text-gray-700 text-sm">{position.requirements}</p>
-                  </div>
-                )}
-                
-                {position.time_commitment && (
-                  <div>
-                    <h4 className="font-semibold text-sm">Time Commitment</h4>
-                    <p className="text-gray-700 text-sm">{position.time_commitment}</p>
-                  </div>
-                )}
-                
-                {position.contact_info && (
-                  <div>
-                    <h4 className="font-semibold text-sm">Contact</h4>
-                    <p className="text-gray-700 text-sm">{position.contact_info}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* The list of positions is rendered below the form or the alert */}
-      {positions.length > 0 && (
         <div className="grid gap-6">
           {positions.map((position) => (
             <Card key={position.id} className={!position.is_live ? "border-dashed opacity-70" : ""}>

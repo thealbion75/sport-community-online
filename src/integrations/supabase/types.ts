@@ -313,5 +313,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
-export type MeetingTime = Tables<"club_meeting_times">
