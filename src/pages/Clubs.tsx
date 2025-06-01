@@ -8,8 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import { ClubProfile } from '@/types/club';
-import { ExternalLink, Mail, Phone, MapPin } from 'lucide-react';
+import { ExternalLink, Mail, Phone, MapPin, Navigation } from 'lucide-react';
 
+/**
+ * Clubs Directory Page
+ * Displays a searchable and filterable list of approved sports clubs
+ * with their contact information and location details.
+ */
 const Clubs = () => {
   const [clubs, setClubs] = useState<ClubProfile[]>([]);
   const [filteredClubs, setFilteredClubs] = useState<ClubProfile[]>([]);
@@ -17,7 +22,7 @@ const Clubs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Fetch approved clubs
+  // Fetch approved clubs from the database
   useEffect(() => {
     const fetchClubs = async () => {
       try {
@@ -49,7 +54,9 @@ const Clubs = () => {
       filtered = filtered.filter(club =>
         club.club_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         club.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        club.category.toLowerCase().includes(searchTerm.toLowerCase())
+        club.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (club.city && club.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (club.address && club.address.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
     
@@ -60,8 +67,19 @@ const Clubs = () => {
     setFilteredClubs(filtered);
   }, [clubs, searchTerm, selectedCategory]);
 
-  // Get unique categories for filter
+  // Get unique categories for filter dropdown
   const categories = Array.from(new Set(clubs.map(club => club.category))).sort();
+
+  /**
+   * Formats the location display string from available location fields
+   */
+  const formatLocation = (club: ClubProfile): string => {
+    const parts = [];
+    if (club.address) parts.push(club.address);
+    if (club.city) parts.push(club.city);
+    if (club.postcode) parts.push(club.postcode);
+    return parts.join(', ');
+  };
 
   if (isLoading) {
     return (
@@ -90,7 +108,7 @@ const Clubs = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-8">
             <div className="flex-1">
               <Input
-                placeholder="Search clubs by name, description, or sport..."
+                placeholder="Search clubs by name, description, sport, or location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full"
@@ -138,12 +156,11 @@ const Clubs = () => {
                       <CardTitle className="text-lg">{club.club_name}</CardTitle>
                       <Badge variant="secondary">{club.category}</Badge>
                     </div>
-                    {club.address && (
+                    {/* Location Display */}
+                    {formatLocation(club) && (
                       <CardDescription className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {club.address}
-                        {club.city && `, ${club.city}`}
-                        {club.postcode && ` ${club.postcode}`}
+                        <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
+                        <span className="truncate">{formatLocation(club)}</span>
                       </CardDescription>
                     )}
                   </CardHeader>
@@ -153,30 +170,59 @@ const Clubs = () => {
                     {/* Contact Information */}
                     <div className="space-y-2">
                       <div className="flex items-center">
-                        <Mail className="h-4 w-4 mr-2 text-gray-500" />
+                        <Mail className="h-4 w-4 mr-2 text-gray-500 flex-shrink-0" />
                         <a 
                           href={`mailto:${club.contact_email}`} 
-                          className="text-egsport-blue hover:underline text-sm"
+                          className="text-egsport-blue hover:underline text-sm truncate"
                         >
                           {club.contact_email}
                         </a>
                       </div>
                       {club.contact_phone && (
                         <div className="flex items-center">
-                          <Phone className="h-4 w-4 mr-2 text-gray-500" />
+                          <Phone className="h-4 w-4 mr-2 text-gray-500 flex-shrink-0" />
                           <span className="text-sm">{club.contact_phone}</span>
                         </div>
                       )}
                       {club.website && (
                         <div className="flex items-center">
-                          <ExternalLink className="h-4 w-4 mr-2 text-gray-500" />
+                          <ExternalLink className="h-4 w-4 mr-2 text-gray-500 flex-shrink-0" />
                           <a 
                             href={club.website} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-egsport-blue hover:underline text-sm"
+                            className="text-egsport-blue hover:underline text-sm truncate"
                           >
                             Visit Website
+                          </a>
+                        </div>
+                      )}
+                      
+                      {/* Location Links */}
+                      {club.google_maps_url && (
+                        <div className="flex items-center">
+                          <Navigation className="h-4 w-4 mr-2 text-gray-500 flex-shrink-0" />
+                          <a 
+                            href={club.google_maps_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-egsport-blue hover:underline text-sm"
+                          >
+                            Get Directions
+                          </a>
+                        </div>
+                      )}
+                      
+                      {club.what3words && (
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-2 text-gray-500 flex-shrink-0" />
+                          <a 
+                            href={`https://what3words.com/${club.what3words.replace('///', '')}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-egsport-blue hover:underline text-sm font-mono"
+                          >
+                            {club.what3words}
                           </a>
                         </div>
                       )}

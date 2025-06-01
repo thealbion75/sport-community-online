@@ -1,4 +1,9 @@
 
+/**
+ * Club Profile Interface
+ * Represents a sports club's profile information including contact details, 
+ * social media links, location, and approval status.
+ */
 export interface ClubProfile {
   id: string;
   club_name: string;
@@ -21,6 +26,10 @@ export interface ClubProfile {
   google_maps_url?: string;
 }
 
+/**
+ * Meeting Time Interface
+ * Represents a single meeting time for a club including day and time range.
+ */
 export interface MeetingTime {
   id: string;
   club_id: string;

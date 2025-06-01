@@ -67,49 +67,64 @@ export type Database = {
       }
       club_profiles: {
         Row: {
+          address: string | null
           approved: boolean
           category: string
+          city: string | null
           club_name: string
           contact_email: string
           contact_phone: string | null
           created_at: string
           description: string
           facebook_url: string | null
+          google_maps_url: string | null
           id: string
           instagram_url: string | null
+          postcode: string | null
           twitter_url: string | null
           updated_at: string
           website: string | null
+          what3words: string | null
         }
         Insert: {
+          address?: string | null
           approved?: boolean
           category: string
+          city?: string | null
           club_name: string
           contact_email: string
           contact_phone?: string | null
           created_at?: string
           description: string
           facebook_url?: string | null
+          google_maps_url?: string | null
           id: string
           instagram_url?: string | null
+          postcode?: string | null
           twitter_url?: string | null
           updated_at?: string
           website?: string | null
+          what3words?: string | null
         }
         Update: {
+          address?: string | null
           approved?: boolean
           category?: string
+          city?: string | null
           club_name?: string
           contact_email?: string
           contact_phone?: string | null
           created_at?: string
           description?: string
           facebook_url?: string | null
+          google_maps_url?: string | null
           id?: string
           instagram_url?: string | null
+          postcode?: string | null
           twitter_url?: string | null
           updated_at?: string
           website?: string | null
+          what3words?: string | null
         }
         Relationships: []
       }

@@ -37,7 +37,7 @@ const sportsCategories = [
   "Other",
 ];
 
-// Define the club profile form schema with validation (removed meetingTimes)
+// Define the club profile form schema with validation including location fields
 const profileSchema = z.object({
   clubName: z.string().min(2, { message: "Club name must be at least 2 characters" }),
   category: z.string().min(1, { message: "Please select a sport category" }),
@@ -48,6 +48,12 @@ const profileSchema = z.object({
   facebookUrl: z.string().url({ message: "Please enter a valid Facebook URL" }).or(z.literal("")),
   instagramUrl: z.string().url({ message: "Please enter a valid Instagram URL" }).or(z.literal("")),
   twitterUrl: z.string().url({ message: "Please enter a valid Twitter/X URL" }).or(z.literal("")),
+  // Location fields
+  address: z.string().or(z.literal("")),
+  city: z.string().or(z.literal("")),
+  postcode: z.string().or(z.literal("")),
+  what3words: z.string().regex(/^$|^\/\/\/[a-z]+\.[a-z]+\.[a-z]+$/, { message: "What3Words must be in format ///word.word.word" }).or(z.literal("")),
+  googleMapsUrl: z.string().url({ message: "Please enter a valid Google Maps URL" }).or(z.literal("")),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -68,7 +74,7 @@ const Profile = () => {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [meetingTimes, setMeetingTimes] = useState<MeetingTime[]>([]);
   
-  // Define club data with proper types
+  // Define club data with proper types including location fields
   const [clubData, setClubData] = useState<ProfileFormValues>({
     clubName: "",
     category: "",
@@ -79,6 +85,11 @@ const Profile = () => {
     facebookUrl: "",
     instagramUrl: "",
     twitterUrl: "",
+    address: "",
+    city: "",
+    postcode: "",
+    what3words: "",
+    googleMapsUrl: "",
   });
 
   // Initialize form with react-hook-form and zod validation
@@ -127,6 +138,11 @@ const Profile = () => {
             facebookUrl: data.facebook_url || '',
             instagramUrl: data.instagram_url || '',
             twitterUrl: data.twitter_url || '',
+            address: data.address || '',
+            city: data.city || '',
+            postcode: data.postcode || '',
+            what3words: data.what3words || '',
+            googleMapsUrl: data.google_maps_url || '',
           };
           
           setClubData(profileData);
@@ -190,6 +206,12 @@ const Profile = () => {
           facebook_url: data.facebookUrl || null,
           instagram_url: data.instagramUrl || null,
           twitter_url: data.twitterUrl || null,
+          // Location fields
+          address: data.address || null,
+          city: data.city || null,
+          postcode: data.postcode || null,
+          what3words: data.what3words || null,
+          google_maps_url: data.googleMapsUrl || null,
         });
       
       if (error) {
@@ -419,6 +441,92 @@ const Profile = () => {
                           </FormItem>
                         )}
                       />
+
+                      {/* Location Information Section */}
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-medium">Location Information (Optional)</h3>
+                        <p className="text-sm text-gray-600">
+                          Adding location details helps people find your club and know where to attend activities.
+                        </p>
+                        
+                        <FormField
+                          control={form.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Street Address</FormLabel>
+                              <FormControl>
+                                <Input placeholder="123 Sport Street" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="city"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>City</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="London" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="postcode"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Postcode</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="SW1A 1AA" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <FormField
+                          control={form.control}
+                          name="what3words"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>What3Words Address</FormLabel>
+                              <FormControl>
+                                <Input placeholder="///filled.count.soap" {...field} />
+                              </FormControl>
+                              <FormDescription>
+                                A precise 3-word address (e.g., ///filled.count.soap). Visit what3words.com to find yours.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="googleMapsUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Google Maps Link</FormLabel>
+                              <FormControl>
+                                <Input placeholder="https://maps.google.com/..." {...field} />
+                              </FormControl>
+                              <FormDescription>
+                                Share a Google Maps link to your location for easy directions.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
                       <div className="space-y-6">
                         <h3 className="text-lg font-medium">Contact Information</h3>
