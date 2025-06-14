@@ -199,6 +199,51 @@ export type Database = {
         }
         Relationships: []
       }
+      sports_council_meetings: {
+        Row: {
+          address: string | null
+          created_at: string
+          date: string
+          id: string
+          outcomes: string[] | null
+          speaker: string | null
+          speaker_role: string | null
+          status: string
+          time: string | null
+          topic: string
+          updated_at: string
+          venue: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          outcomes?: string[] | null
+          speaker?: string | null
+          speaker_role?: string | null
+          status?: string
+          time?: string | null
+          topic: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          outcomes?: string[] | null
+          speaker?: string | null
+          speaker_role?: string | null
+          status?: string
+          time?: string | null
+          topic?: string
+          updated_at?: string
+          venue?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
