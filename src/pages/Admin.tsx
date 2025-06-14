@@ -1,239 +1,196 @@
-import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+
+import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { useAuth } from '@/contexts/AuthContext';
-import { ClubProfile } from '@/types/club';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Users, Building2, UserCheck, Calendar } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import SportsCouncilAdmin from '@/components/admin/SportsCouncilAdmin';
 
+/**
+ * Admin Dashboard Page
+ * Protected route for administrators to manage the platform
+ */
 const Admin = () => {
-  const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [pendingClubs, setPendingClubs] = useState<ClubProfile[]>([]);
-  const [approvedClubs, setApprovedClubs] = useState<ClubProfile[]>([]);
-
-  // Check if user is admin
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user) return;
+  const { data: clubStats, isLoading: statsLoading } = useQuery({
+    queryKey: ['admin-club-stats'],
+    queryFn: async () => {
+      const [totalClubs, approvedClubs, volunteerPositions] = await Promise.all([
+        supabase.from('club_profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('club_profiles').select('id', { count: 'exact', head: true }).eq('approved', true),
+        supabase.from('club_volunteer_positions').select('id', { count: 'exact', head: true }).eq('is_live', true)
+      ]);
       
-      try {
-        const { data, error } = await supabase.rpc('is_admin', { user_id: user.id });
-        
-        if (error) {
-          console.error('Error checking admin status:', error);
-          return;
-        }
-        
-        setIsAdmin(data);
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-      }
-    };
+      return {
+        total: totalClubs.count || 0,
+        approved: approvedClubs.count || 0,
+        pending: (totalClubs.count || 0) - (approvedClubs.count || 0),
+        volunteerPositions: volunteerPositions.count || 0
+      };
+    },
+  });
 
-    checkAdminStatus();
-  }, [user]);
-
-  // Fetch club profiles
-  useEffect(() => {
-    const fetchClubs = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('club_profiles')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        const pending = data?.filter(club => !club.approved) || [];
-        const approved = data?.filter(club => club.approved) || [];
-        
-        setPendingClubs(pending);
-        setApprovedClubs(approved);
-      } catch (error) {
-        console.error('Error fetching clubs:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Failed to load clubs',
-          description: 'There was a problem loading the club data.',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (isAdmin) {
-      fetchClubs();
-    } else {
-      setIsLoading(false);
-    }
-  }, [isAdmin]);
-
-  // Approve a club
-  const handleApprove = async (clubId: string) => {
-    try {
-      const { error } = await supabase
-        .from('club_profiles')
-        .update({ approved: true })
-        .eq('id', clubId);
-      
-      if (error) throw error;
-      
-      // Move club from pending to approved
-      const clubToMove = pendingClubs.find(club => club.id === clubId);
-      if (clubToMove) {
-        setPendingClubs(pendingClubs.filter(club => club.id !== clubId));
-        setApprovedClubs([{ ...clubToMove, approved: true }, ...approvedClubs]);
-      }
-      
-      toast({
-        title: 'Club approved',
-        description: 'The club has been successfully approved.',
-      });
-    } catch (error) {
-      console.error('Error approving club:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Approval failed',
-        description: 'There was a problem approving the club.',
-      });
-    }
-  };
-
-  // Reject/unapprove a club
-  const handleReject = async (clubId: string) => {
-    try {
-      const { error } = await supabase
-        .from('club_profiles')
-        .update({ approved: false })
-        .eq('id', clubId);
-      
-      if (error) throw error;
-      
-      // Move club from approved to pending if it was approved
-      const clubToMove = approvedClubs.find(club => club.id === clubId);
-      if (clubToMove) {
-        setApprovedClubs(approvedClubs.filter(club => club.id !== clubId));
-        setPendingClubs([{ ...clubToMove, approved: false }, ...pendingClubs]);
-      }
-      
-      toast({
-        title: 'Club status updated',
-        description: 'The club approval status has been updated.',
-      });
-    } catch (error) {
-      console.error('Error updating club status:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Update failed',
-        description: 'There was a problem updating the club status.',
-      });
-    }
-  };
-
-  if (isLoading) {
+  if (statsLoading) {
     return (
       <Layout>
-        <div className="egsport-container py-12">
-          <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-egsport-blue"></div>
+        <ProtectedRoute>
+          <div className="egsport-container py-12">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center">
+                <div className="animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <Layout>
-        <div className="egsport-container py-12">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
-            <p className="text-gray-600">
-              You do not have permission to view this page.
-            </p>
-          </div>
-        </div>
+        </ProtectedRoute>
       </Layout>
     );
   }
 
   return (
-    <ProtectedRoute>
-      <Layout>
+    <Layout>
+      <ProtectedRoute>
         <div className="egsport-container py-12">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+          <div className="max-w-6xl mx-auto">
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold mb-4">Admin Dashboard</h1>
+              <p className="text-xl text-gray-600">
+                Manage clubs, volunteer opportunities, and platform content
+              </p>
+            </div>
 
-            {/* Pending Clubs */}
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">Pending Clubs</h2>
-              {pendingClubs.length === 0 ? (
-                <p className="text-gray-600">No clubs are currently pending approval.</p>
-              ) : (
-                <div className="grid gap-4">
-                  {pendingClubs.map((club) => (
-                    <Card key={club.id}>
-                      <CardHeader>
-                        <CardTitle>{club.club_name}</CardTitle>
-                        <CardDescription>{club.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p>Category: {club.category}</p>
-                        <p>Contact Email: {club.contact_email}</p>
-                      </CardContent>
-                      <div className="flex justify-end space-x-2 p-4">
-                        <Button onClick={() => handleApprove(club.id)} className="bg-green-500 hover:bg-green-700 text-white">
-                          Approve
-                        </Button>
-                        <Button onClick={() => handleReject(club.id)} className="bg-red-500 hover:bg-red-700 text-white">
-                          Reject
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </section>
+            {/* Stats Overview */}
+            <div className="grid md:grid-cols-4 gap-6 mb-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Clubs</CardTitle>
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{clubStats?.total || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Registered sports clubs
+                  </p>
+                </CardContent>
+              </Card>
 
-            {/* Approved Clubs */}
-            <section>
-              <h2 className="text-2xl font-semibold mb-4">Approved Clubs</h2>
-              {approvedClubs.length === 0 ? (
-                <p className="text-gray-600">No clubs have been approved yet.</p>
-              ) : (
-                <div className="grid gap-4">
-                  {approvedClubs.map((club) => (
-                    <Card key={club.id}>
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle>{club.club_name}</CardTitle>
-                          <Badge variant="secondary">Approved</Badge>
-                        </div>
-                        <CardDescription>{club.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p>Category: {club.category}</p>
-                        <p>Contact Email: {club.contact_email}</p>
-                      </CardContent>
-                      <div className="flex justify-end p-4">
-                        <Button onClick={() => handleReject(club.id)} className="bg-red-500 hover:bg-red-700 text-white">
-                          Unapprove
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </section>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Approved Clubs</CardTitle>
+                  <UserCheck className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{clubStats?.approved || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Live on the platform
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{clubStats?.pending || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Awaiting review
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Live Opportunities</CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{clubStats?.volunteerPositions || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Volunteer positions
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Admin Tabs */}
+            <Tabs defaultValue="clubs" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="clubs">Club Management</TabsTrigger>
+                <TabsTrigger value="volunteers">Volunteer Opportunities</TabsTrigger>
+                <TabsTrigger value="sports-council">Sports Council</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="clubs" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Club Management</CardTitle>
+                    <CardDescription>
+                      Review and manage sports club registrations
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600">
+                      Club management functionality will be implemented here. 
+                      This will include approving new club registrations, editing club information, 
+                      and managing club status.
+                    </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="volunteers" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Volunteer Opportunity Management</CardTitle>
+                    <CardDescription>
+                      Oversee volunteer positions across all clubs
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600">
+                      Volunteer opportunity management will be implemented here.
+                      This will include reviewing, approving, and managing volunteer positions
+                      posted by clubs.
+                    </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="sports-council" className="space-y-4">
+                <SportsCouncilAdmin />
+              </TabsContent>
+
+              <TabsContent value="settings" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Platform Settings</CardTitle>
+                    <CardDescription>
+                      Configure platform-wide settings and preferences
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600">
+                      Platform settings will be implemented here.
+                      This could include site configuration, email templates,
+                      and other administrative preferences.
+                    </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
-      </Layout>
-    </ProtectedRoute>
+      </ProtectedRoute>
+    </Layout>
   );
 };
 
