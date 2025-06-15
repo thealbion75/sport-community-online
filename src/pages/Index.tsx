@@ -25,16 +25,20 @@ const SPORTS_SILHOUETTE = (
 );
 
 const LOCAL_IMAGES = [
-  // Football (Unsplash, East Grinstead relevant)
-  'https://images.unsplash.com/photo-1505843273132-bc5c6f7bfa1a?auto=format&fit=crop&w=600&q=80',
+  // Youth football (Unsplash)
+  { src: 'https://images.unsplash.com/photo-1505843273132-bc5c6f7bfa1a?auto=format&fit=crop&w=600&q=80', alt: 'Youth football in East Grinstead' },
   // Cricket
-  'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=600&q=80',
+  { src: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=600&q=80', alt: 'Cricket match in East Grinstead' },
   // Netball
-  'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=600&q=80',
-  // Athletics
-  'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80',
-  // Local landmark (Ashdown Forest)
-  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
+  { src: 'https://images.unsplash.com/photo-1517960413843-0aee8e2d471c?auto=format&fit=crop&w=600&q=80', alt: 'Netball game with young players' },
+  // Athletics (track)
+  { src: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80', alt: 'Athletics track and field' },
+  // Hockey
+  { src: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=600&q=80', alt: 'Youth hockey team' },
+  // Rugby
+  { src: 'https://images.unsplash.com/photo-1508610048659-a06b669e4c47?auto=format&fit=crop&w=600&q=80', alt: 'Junior rugby match' },
+  // Volunteering/community connection (hands together)
+  { src: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80', alt: 'Volunteers connecting and supporting' },
 ];
 
 const Index = () => {
@@ -109,15 +113,9 @@ const Index = () => {
       <section className="py-16 bg-gradient-to-b from-sky-50 to-white">
         <div className="egsport-container">
           <h2 className="text-3xl font-bold text-center mb-10 font-sans text-egsport-green">Local Impact</h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 rounded-2xl overflow-hidden shadow-xl">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 rounded-2xl overflow-hidden shadow-xl">
             {LOCAL_IMAGES.map((img, i) => (
-              <img key={i} src={img} alt={
-                i === 0 ? 'Football in East Grinstead' :
-                i === 1 ? 'Cricket in East Grinstead' :
-                i === 2 ? 'Netball in East Grinstead' :
-                i === 3 ? 'Athletics in East Grinstead' :
-                'Ashdown Forest, East Grinstead'
-              } className="object-cover w-full h-40 md:h-48 hover:scale-105 transition-transform" loading="lazy" />
+              <img key={i} src={img.src} alt={img.alt} className="object-cover w-full h-40 md:h-48 hover:scale-105 transition-transform" loading="lazy" />
             ))}
           </div>
         </div>
