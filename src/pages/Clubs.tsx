@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
-import { ClubProfile } from '@/types/club';
+import { ClubProfile, MeetingTime } from '@/types/club';
 import { ExternalLink, Mail, Phone, MapPin, Navigation, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -20,6 +19,7 @@ const Clubs = () => {
   const [clubs, setClubs] = useState<ClubProfile[]>([]);
   const [filteredClubs, setFilteredClubs] = useState<ClubProfile[]>([]);
   const [clubVolunteerCounts, setClubVolunteerCounts] = useState<Record<string, number>>({});
+  const [clubMeetingTimes, setClubMeetingTimes] = useState<Record<string, MeetingTime[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -34,26 +34,38 @@ const Clubs = () => {
           .select('*')
           .eq('approved', true)
           .order('club_name');
-        
         if (clubsError) throw clubsError;
-        
+
         // Fetch volunteer position counts for each club
         const { data: volunteerData, error: volunteerError } = await supabase
           .from('club_volunteer_positions')
           .select('club_id')
           .eq('is_live', true);
-          
         if (volunteerError) throw volunteerError;
-        
+
+        // Fetch meeting times for all clubs
+        const { data: meetingTimesData, error: meetingTimesError } = await supabase
+          .from('club_meeting_times')
+          .select('*');
+        if (meetingTimesError) throw meetingTimesError;
+
         // Count volunteer positions per club
         const counts: Record<string, number> = {};
         volunteerData?.forEach(position => {
           counts[position.club_id] = (counts[position.club_id] || 0) + 1;
         });
-        
+
+        // Group meeting times by club_id
+        const meetingTimesByClub: Record<string, MeetingTime[]> = {};
+        meetingTimesData?.forEach(mt => {
+          if (!meetingTimesByClub[mt.club_id]) meetingTimesByClub[mt.club_id] = [];
+          meetingTimesByClub[mt.club_id].push(mt);
+        });
+
         setClubs(clubsData || []);
         setFilteredClubs(clubsData || []);
         setClubVolunteerCounts(counts);
+        setClubMeetingTimes(meetingTimesByClub);
       } catch (error) {
         console.error('Error fetching clubs and volunteer data:', error);
       } finally {
@@ -181,10 +193,12 @@ const Clubs = () => {
                       <div className="flex flex-col items-end gap-2">
                         <Badge variant="secondary">{club.category}</Badge>
                         {clubVolunteerCounts[club.id] && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            <Users className="h-3 w-3 mr-1" />
-                            {clubVolunteerCounts[club.id]} volunteer role{clubVolunteerCounts[club.id] !== 1 ? 's' : ''}
-                          </Badge>
+                          <Link to={`/volunteer-opportunities?club_id=${club.id}`}>
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 cursor-pointer hover:bg-green-100">
+                              <Users className="h-3 w-3 mr-1" />
+                              {clubVolunteerCounts[club.id]} volunteer role{clubVolunteerCounts[club.id] !== 1 ? 's' : ''}
+                            </Badge>
+                          </Link>
                         )}
                       </div>
                     </div>
@@ -194,6 +208,34 @@ const Clubs = () => {
                         <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
                         <span className="truncate">{formatLocation(club)}</span>
                       </CardDescription>
+                    )}
+                    {/* Meeting Times Display - improved formatting */}
+                    {clubMeetingTimes[club.id] && clubMeetingTimes[club.id].length > 0 && (
+                      <div className="mt-2">
+                        <span className="font-semibold text-sm">Meeting Times:</span>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-[250px] mt-1 text-sm text-gray-700 border rounded-lg">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="px-2 py-1 text-left font-medium">Day</th>
+                                <th className="px-2 py-1 text-left font-medium">Start</th>
+                                <th className="px-2 py-1 text-left font-medium">End</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {clubMeetingTimes[club.id]
+                                .sort((a, b) => a.day_of_week.localeCompare(b.day_of_week) || a.start_time.localeCompare(b.start_time))
+                                .map((mt) => (
+                                  <tr key={mt.id} className="border-t">
+                                    <td className="px-2 py-1 whitespace-nowrap">{mt.day_of_week}</td>
+                                    <td className="px-2 py-1 whitespace-nowrap">{mt.start_time}</td>
+                                    <td className="px-2 py-1 whitespace-nowrap">{mt.end_time}</td>
+                                  </tr>
+                                ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     )}
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col">

@@ -8,6 +8,8 @@ import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import { ClubProfile } from '@/types/club';
+import SportsCouncilAdmin from '@/components/SportsCouncilAdmin';
+import VolunteerRolesAdmin from '@/components/VolunteerRolesAdmin';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -229,6 +231,16 @@ const Admin = () => {
                   ))}
                 </div>
               )}
+            </section>
+
+            {/* Sports Council Meetings Admin */}
+            <section className="mb-12">
+              <SportsCouncilAdmin />
+            </section>
+
+            {/* Volunteer Roles Admin */}
+            <section className="mb-12">
+              <VolunteerRolesAdmin />
             </section>
           </div>
         </div>

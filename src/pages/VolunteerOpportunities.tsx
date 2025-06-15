@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import { MapPin, Clock, Mail, Phone, ExternalLink, Navigation } from 'lucide-react';
+import { useVolunteerRoles } from '@/hooks/useVolunteerRoles';
+import { useLocation } from 'react-router-dom';
 
 /**
  * Interface for volunteer position with club information
@@ -21,6 +22,7 @@ interface VolunteerOpportunityWithClub {
   location?: string;
   contact_info?: string;
   created_at: string;
+  club_id: string; // The club's unique identifier
   club_name: string;
   club_category: string;
   club_contact_email: string;
@@ -34,16 +36,50 @@ interface VolunteerOpportunityWithClub {
 }
 
 /**
- * Volunteer Opportunities Page
- * Displays all available volunteer positions across all approved clubs
- * with search and filtering capabilities.
+ * VolunteerOpportunities Page
+ *
+ * Displays all available volunteer positions across all approved clubs.
+ * Features:
+ * - Search and filter by club, sport, and role
+ * - Supports filtering by club via query string (e.g., ?club_id=...)
+ * - Uses dynamic volunteer roles from the database
+ * - Shows club and contact details for each opportunity
+ *
+ * @component
  */
 const VolunteerOpportunities = () => {
+  /**
+   * All live volunteer opportunities with club info
+   */
   const [opportunities, setOpportunities] = useState<VolunteerOpportunityWithClub[]>([]);
+  /**
+   * Filtered list based on search, category, role, or club
+   */
   const [filteredOpportunities, setFilteredOpportunities] = useState<VolunteerOpportunityWithClub[]>([]);
+  /**
+   * Loading state for async data
+   */
   const [isLoading, setIsLoading] = useState(true);
+  /**
+   * Search term for filtering
+   */
   const [searchTerm, setSearchTerm] = useState('');
+  /**
+   * Selected sport category
+   */
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  /**
+   * Selected volunteer role
+   */
+  const [selectedRole, setSelectedRole] = useState<string>('all');
+  /**
+   * List of available roles from the database
+   */
+  const roles = useVolunteerRoles();
+  /**
+   * React Router location for query string parsing
+   */
+  const location = useLocation();
 
   // Fetch all live volunteer positions with club information
   useEffect(() => {
@@ -62,6 +98,7 @@ const VolunteerOpportunities = () => {
             contact_info,
             created_at,
             club_profiles!inner (
+              id,
               club_name,
               category,
               contact_email,
@@ -92,6 +129,7 @@ const VolunteerOpportunities = () => {
           location: opportunity.location,
           contact_info: opportunity.contact_info,
           created_at: opportunity.created_at,
+          club_id: opportunity.club_profiles.id, // Use the joined club_profiles.id
           club_name: opportunity.club_profiles.club_name,
           club_category: opportunity.club_profiles.category,
           club_contact_email: opportunity.club_profiles.contact_email,
@@ -135,8 +173,23 @@ const VolunteerOpportunities = () => {
       filtered = filtered.filter(opportunity => opportunity.club_category === selectedCategory);
     }
     
+    if (selectedRole !== 'all') {
+      filtered = filtered.filter(opportunity => opportunity.title === selectedRole);
+    }
+    
     setFilteredOpportunities(filtered);
-  }, [opportunities, searchTerm, selectedCategory]);
+  }, [opportunities, searchTerm, selectedCategory, selectedRole]);
+
+  // Parse club_id from query string
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const clubId = params.get('club_id');
+    if (clubId) {
+      setFilteredOpportunities(opportunities.filter(o => o.club_id === clubId));
+    } else {
+      setFilteredOpportunities(opportunities);
+    }
+  }, [location.search, opportunities]);
 
   // Get unique categories for filter dropdown
   const categories = Array.from(new Set(opportunities.map(opportunity => opportunity.club_category))).sort();
@@ -196,6 +249,20 @@ const VolunteerOpportunities = () => {
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Add role filter dropdown to the controls */}
+            <div className="md:w-64">
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem key={role} value={role}>{role}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

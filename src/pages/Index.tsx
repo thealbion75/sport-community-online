@@ -1,10 +1,24 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/Layout';
+import { supabase } from '@/integrations/supabase/client';
+import type { SportsCouncilMeeting } from '@/types/sportsCouncil';
 
 const Index = () => {
+  const [councilMeetings, setCouncilMeetings] = useState<SportsCouncilMeeting[]>([]);
+
+  useEffect(() => {
+    const fetchCouncilMeetings = async () => {
+      const { data, error } = await supabase
+        .from('sports_council_meetings')
+        .select('*')
+        .order('meeting_date', { ascending: false });
+      if (!error && data) setCouncilMeetings(data);
+    };
+    fetchCouncilMeetings();
+  }, []);
+
   return (
     <Layout>
       {/* Hero section */}
@@ -87,6 +101,29 @@ const Index = () => {
               </Button>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* Sports Council Meetings Section */}
+      <section className="py-16 bg-sky-50">
+        <div className="egsport-container">
+          <h2 className="egsport-subheading text-center mb-8">Sports Council Meetings</h2>
+          {councilMeetings.length === 0 ? (
+            <p className="text-center text-gray-500">No recent Sports Council meetings found.</p>
+          ) : (
+            <div className="max-w-3xl mx-auto space-y-8">
+              {councilMeetings.map(meeting => (
+                <div key={meeting.id} className="bg-white rounded-lg shadow p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2">
+                    <span className="font-semibold text-lg text-egsport-blue">{new Date(meeting.meeting_date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    <span className="text-sm text-gray-600 mt-1 md:mt-0">{meeting.location}</span>
+                  </div>
+                  <div className="text-gray-800 mb-2"><strong>Summary:</strong> {meeting.summary}</div>
+                  {meeting.notes && <div className="text-gray-600 text-sm"><strong>Notes:</strong> {meeting.notes}</div>}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </Layout>
