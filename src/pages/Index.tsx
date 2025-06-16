@@ -25,20 +25,13 @@ const SPORTS_SILHOUETTE = (
 );
 
 const LOCAL_IMAGES = [
-  // Youth football (Unsplash)
-  { src: 'https://images.unsplash.com/photo-1505843273132-bc5c6f7bfa1a?auto=format&fit=crop&w=600&q=80', alt: 'Youth football in East Grinstead' },
-  // Cricket
-  { src: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=600&q=80', alt: 'Cricket match in East Grinstead' },
-  // Netball
-  { src: 'https://images.unsplash.com/photo-1517960413843-0aee8e2d471c?auto=format&fit=crop&w=600&q=80', alt: 'Netball game with young players' },
-  // Athletics (track)
-  { src: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80', alt: 'Athletics track and field' },
-  // Hockey
-  { src: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=600&q=80', alt: 'Youth hockey team' },
-  // Rugby
-  { src: 'https://images.unsplash.com/photo-1508610048659-a06b669e4c47?auto=format&fit=crop&w=600&q=80', alt: 'Junior rugby match' },
-  // Volunteering/community connection (hands together)
-  { src: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80', alt: 'Volunteers connecting and supporting' },
+  { src: '/images/youth-football.jpg', alt: 'Youth football in East Grinstead' },
+  { src: '/images/youth-cricket.jpg', alt: 'Youth cricket match' },
+  { src: '/images/youth-netball.jpg', alt: 'Netball game with young players' },
+  { src: '/images/youth-athletics.jpg', alt: 'Junior athletics event' },
+  { src: '/images/youth-hockey.jpg', alt: 'Youth hockey team' },
+  { src: '/images/junior-rugby.jpg', alt: 'Junior rugby match' },
+  { src: '/images/volunteering.jpg', alt: 'Young volunteers helping at a sports event' },
 ];
 
 const Index = () => {
@@ -148,7 +141,8 @@ const Index = () => {
                     <span className="font-semibold text-lg text-egsport-blue">{new Date(meeting.meeting_date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     <span className="text-sm text-gray-600 mt-1 md:mt-0">{meeting.location}</span>
                   </div>
-                  <div className="text-gray-800 mb-2"><strong>Summary:</strong> {meeting.summary}</div>
+                  <div className="text-gray-800 mb-2"><strong>Agenda:</strong> {meeting.agenda}</div>
+                  <div className="text-gray-800 mb-2"><strong>Summary:</strong> {meeting.summary || 'N/A'}</div>
                   {meeting.notes && <div className="text-gray-600 text-sm"><strong>Notes:</strong> {meeting.notes}</div>}
                 </div>
               ))}
