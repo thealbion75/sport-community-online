@@ -1,8 +1,9 @@
 
 /**
- * Club Profile Interface
+ * Club Profile Interface (Legacy)
  * Represents a sports club's profile information including contact details, 
  * social media links, location, and approval status.
+ * Note: This is the legacy interface. New volunteer platform uses Club interface from volunteer.ts
  */
 export interface ClubProfile {
   id: string;

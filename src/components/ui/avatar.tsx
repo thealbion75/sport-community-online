@@ -1,3 +1,8 @@
+/**
+ * Avatar Component
+ * User profile image display component
+ */
+
 import * as React from "react"
 import * as AvatarPrimitive from "@radix-ui/react-avatar"
 

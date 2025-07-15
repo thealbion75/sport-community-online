@@ -1,3 +1,8 @@
+/**
+ * Toast Hook
+ * Provides toast notification functionality
+ */
+
 import * as React from "react"
 
 import type {

@@ -6,7 +6,6 @@ import { PlusCircle, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { useVolunteerRoles } from '@/hooks/useVolunteerRoles';
 
 import {
   Form,
@@ -32,11 +31,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Define the volunteer position form schema
 const positionSchema = z.object({
-  role: z.string().min(2, { message: "Please select a role" }),
+  title: z.string().min(2, { message: "Title must be at least 2 characters" }),
   description: z.string().min(10, { message: "Description must be at least 10 characters" }),
   responsibilities: z.string().optional(),
   requirements: z.string().optional(),
@@ -77,7 +75,7 @@ const VolunteerPositions = () => {
   const form = useForm<PositionFormValues>({
     resolver: zodResolver(positionSchema),
     defaultValues: {
-      role: "",
+      title: "",
       description: "",
       responsibilities: "",
       requirements: "",
@@ -87,8 +85,6 @@ const VolunteerPositions = () => {
       is_live: false,
     },
   });
-
-  const roles = useVolunteerRoles();
 
   // Fetch volunteer positions from database
   useEffect(() => {
@@ -132,7 +128,7 @@ const VolunteerPositions = () => {
         const { error } = await supabase
           .from('club_volunteer_positions')
           .update({
-            title: data.role,
+            title: data.title,
             description: data.description,
             responsibilities: data.responsibilities || null,
             requirements: data.requirements || null,
@@ -161,7 +157,7 @@ const VolunteerPositions = () => {
           .from('club_volunteer_positions')
           .insert({
             club_id: user.id,
-            title: data.role,
+            title: data.title,
             description: data.description,
             responsibilities: data.responsibilities || null,
             requirements: data.requirements || null,
@@ -190,7 +186,7 @@ const VolunteerPositions = () => {
       setShowInlineForm(false);
       setEditingPosition(null);
       form.reset({
-        role: "",
+        title: "",
         description: "",
         responsibilities: "",
         requirements: "",
@@ -288,7 +284,7 @@ const VolunteerPositions = () => {
   const handleEditPositionClick = (position: Position) => {
     setEditingPosition(position);
     form.reset({
-      role: position.role, // FIXED: use role instead of title
+      title: position.title,
       description: position.description,
       responsibilities: position.responsibilities || "",
       requirements: position.requirements || "",
@@ -304,7 +300,7 @@ const VolunteerPositions = () => {
   const handleAddPositionClick = () => {
     setEditingPosition(null);
     form.reset({
-      role: "",
+      title: "",
       description: "",
       responsibilities: "",
       requirements: "",
@@ -342,25 +338,16 @@ const VolunteerPositions = () => {
                 {editingPosition ? "Edit Volunteer Position" : "Add New Volunteer Position"}
               </h3>
               
-              {/* Role field */}
+              {/* Title field */}
               <FormField
                 control={form.control}
-                name="role"
+                name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {roles.map((role) => (
-                          <SelectItem key={role} value={role}>{role}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Title*</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g., Youth Coach, Treasurer, Event Coordinator" />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -511,7 +498,7 @@ const VolunteerPositions = () => {
                     setShowInlineForm(false);
                     setEditingPosition(null);
                     form.reset({ 
-                      role: "", description: "", responsibilities: "", requirements: "", 
+                      title: "", description: "", responsibilities: "", requirements: "", 
                       time_commitment: "", location: "", contact_info: "", is_live: false 
                     });
                   }}
@@ -546,7 +533,7 @@ const VolunteerPositions = () => {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle>{position.role}</CardTitle> {/* FIXED: use role instead of title */}
+                    <CardTitle>{position.title}</CardTitle>
                     <CardDescription>{position.location || "No location specified"}</CardDescription>
                   </div>
                   <div className="flex items-center space-x-2">

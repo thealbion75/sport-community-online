@@ -1,3 +1,4 @@
+
 # EGSport - Sports Club Management Platform
 
 EGSport is a comprehensive web platform designed to help sports clubs manage their operations and connect with their communities. The platform provides tools for club registration, member management, volunteer coordination, and public discovery of local sports clubs.
@@ -9,8 +10,6 @@ EGSport is a comprehensive web platform designed to help sports clubs manage the
 - **Club Dashboard**: Comprehensive management interface for club administrators
 - **Meeting Times Management**: Set up and manage regular club meeting schedules
 - **Volunteer Position Management**: Create, edit, and manage volunteer opportunities
-- **Dynamic Volunteer Roles**: Volunteer roles are managed in the admin dashboard and used throughout the site
-- **Clickable Volunteer Position Counts**: Click the number of volunteer positions in the Clubs directory to view just those positions
 - **Location & Contact Management**: Add club addresses, contact details, and social media links
 - **Google Maps Integration**: Link club locations to Google Maps for easy discovery
 - **What3Words Support**: Precise location sharing using What3Words addresses
@@ -25,8 +24,6 @@ EGSport is a comprehensive web platform designed to help sports clubs manage the
 - **Admin Dashboard**: Review and approve club registrations
 - **User Management**: Comprehensive user and club oversight
 - **Approval Workflow**: Streamlined process for reviewing club applications
-- **Sports Council Meetings Management**: Admins can view and update Sports Council meeting details
-- **Volunteer Roles Management**: Admins can add, edit, and delete volunteer roles used throughout the platform
 
 ## 🛠 Technology Stack
 
@@ -60,6 +57,18 @@ npm install
 ### 3. Environment Setup
 The project uses Supabase for backend services. Ensure your Supabase project is configured with the correct database schema and RLS policies.
 
+### Supabase Project Setup
+
+1.  **Create a new Supabase project:** Go to [supabase.com](https://supabase.com) and create a new project.
+2.  **Get your API keys:** In your Supabase project, go to "Project Settings" > "API". You will need the "Project URL" and the "public" `anon` key.
+3.  **Create a `.env` file:** In the root of your project, create a `.env` file by copying the `.env.example` file.
+4.  **Add your Supabase credentials to the `.env` file:**
+    ```
+    VITE_SUPABASE_URL=YOUR_SUPABASE_URL
+    VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+    ```
+5.  **Database setup:** Supabase automatically creates the `auth.users` table. When a user signs up, their `full_name` and `club_name` are stored in the `raw_user_meta_data` column.
+
 ### 4. Start Development Server
 ```bash
 npm run dev
@@ -73,12 +82,7 @@ The application will be available at `http://localhost:5173`
 - **club_profiles**: Main club information and registration data
 - **club_meeting_times**: Scheduled meeting times for clubs
 - **club_volunteer_positions**: Volunteer opportunities posted by clubs
-- **volunteer_roles**: List of available volunteer roles (editable by admins)
-- **sports_council_meetings**: Sports Council meeting details (CRUD via admin dashboard)
 - **admin_roles**: Administrative user permissions
-
-### Dummy Data
-- Example SQL for Sports Council meetings: see `supabase/dummy_sports_council_meetings.sql`
 
 ### Key Features
 - Row Level Security (RLS) for data protection
@@ -91,7 +95,7 @@ The application will be available at `http://localhost:5173`
 The platform uses Supabase Auth with the following roles:
 - **Public Users**: Can browse approved clubs
 - **Club Administrators**: Can manage their club profile and content
-- **System Administrators**: Can approve/reject club registrations, manage roles, and Sports Council meetings
+- **System Administrators**: Can approve/reject club registrations
 
 ## 📱 User Interface Components
 
@@ -100,17 +104,14 @@ The platform uses Supabase Auth with the following roles:
 - **AuthenticatedNav**: Navigation for logged-in users
 - **ProtectedRoute**: Route protection for authenticated areas
 - **MeetingTimesSelector**: Interactive meeting time picker
-- **VolunteerPositions**: Volunteer opportunity management (uses dynamic roles)
-- **VolunteerRolesAdmin**: Admin interface for managing volunteer roles
-- **SportsCouncilAdmin**: Admin interface for managing Sports Council meetings
+- **VolunteerPositions**: Volunteer opportunity management
 
 ### Pages
 - **Home**: Landing page with platform overview
-- **Clubs**: Public directory of approved clubs (clickable volunteer position counts)
+- **Clubs**: Public directory of approved clubs
 - **Profile**: Club dashboard for administrators
-- **Admin**: Administrative approval interface, Sports Council, and Volunteer Roles management
+- **Admin**: Administrative approval interface
 - **Login/Register**: Authentication pages
-- **Volunteer Opportunities**: All open positions, filterable by club and role
 
 ## 🔧 Development Guidelines
 
@@ -119,14 +120,12 @@ The platform uses Supabase Auth with the following roles:
 - TypeScript interfaces defined in `/src/types/`
 - Supabase integration centralized in `/src/integrations/`
 - Form validation using Zod schemas
-- All new features are documented with JSDoc-style comments
 
 ### Best Practices
 - All user inputs are validated both client and server-side
 - Responsive design using Tailwind CSS utilities
 - Accessibility considerations throughout the interface
 - Error handling with user-friendly toast notifications
-- All major functions and components are documented
 
 ## 🚀 Deployment
 
@@ -162,15 +161,13 @@ The platform uses Supabase Auth with the following roles:
 3. **Dashboard Access**: Use the "Club Dashboard" link after login
 4. **Profile Management**: Complete your club information in the Profile tab
 5. **Meeting Times**: Set up regular meeting schedules (available after approval)
-6. **Volunteer Positions**: Create and manage volunteer opportunities (select from dynamic roles)
+6. **Volunteer Positions**: Create and manage volunteer opportunities
 
 ### For Administrators
 1. **Admin Access**: Access the admin dashboard if you have admin privileges
 2. **Review Applications**: Review pending club registrations
 3. **Approval Process**: Approve or reject club applications
 4. **User Management**: Monitor club activities and user engagement
-5. **Volunteer Roles**: Add, edit, and delete volunteer roles
-6. **Sports Council Meetings**: Manage Sports Council meeting details
 
 ## 🤝 Contributing
 
@@ -185,7 +182,6 @@ The platform uses Supabase Auth with the following roles:
 - Follow React best practices
 - Implement proper error handling
 - Write descriptive commit messages
-- Document all new code and features
 
 ## 📄 License
 

@@ -199,54 +199,6 @@ export type Database = {
         }
         Relationships: []
       }
-      sports_council_meetings: {
-        Row: {
-          id: string
-          meeting_date: string
-          location: string
-          summary: string
-          notes?: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          meeting_date: string
-          location: string
-          summary: string
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          meeting_date?: string
-          location?: string
-          summary?: string
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      volunteer_roles: {
-        Row: {
-          id: number
-          name: string
-          created_at: string
-        }
-        Insert: {
-          id?: number
-          name: string
-          created_at?: string
-        }
-        Update: {
-          id?: number
-          name?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -277,7 +229,7 @@ export type Tables<
   }
     ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
   ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
