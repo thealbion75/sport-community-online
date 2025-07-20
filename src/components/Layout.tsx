@@ -21,9 +21,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const { data: unreadCount = 0 } = useUnreadMessageCount(user?.id || '');
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Navigation Header */}
-      <nav className="bg-white shadow-sm border-b">
+      <nav className="bg-card shadow-sm border-b border-border">
         <div className="egsport-container">
           <div className="flex justify-between items-center py-4">
             {/* Logo and Brand */}
@@ -31,7 +31,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               <div className="w-8 h-8 bg-egsport-blue rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-sm">EG</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">EGSport</span>
+              <span className="text-xl font-bold text-foreground">EGSport</span>
             </Link>
 
             {/* Navigation Links */}
