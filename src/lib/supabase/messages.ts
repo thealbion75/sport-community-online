@@ -1,281 +1,174 @@
-/**
- * Messages Data Access Layer
- * Handles all database operations for internal messaging
- */
+// src/lib/supabase/messages.ts
 
 import { supabase } from '@/integrations/supabase/client';
-import { Message, MessageFormData, ApiResponse } from '@/types';
-import { handleSupabaseError } from '@/lib/react-query-error-handler';
-import { sanitizeObject } from '@/lib/sanitization';
+import { Message, MessageFormData, Conversation } from '@/types/volunteer';
+import { PostgrestError } from '@supabase/supabase-js';
 
-/**
- * Send a new message
- */
-export async function sendMessage(data: MessageFormData): Promise<ApiResponse<Message>> {
-  try {
-    const sanitizedData = sanitizeObject(data);
-    
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const messageData = {
-      ...sanitizedData,
-      sender_id: user.id,
-      read: false,
-    };
-
-    const { data: message, error } = await supabase
-      .from('messages')
-      .insert([messageData])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return { success: true, data: message };
-  } catch (error) {
-    const appError = handleSupabaseError(error);
-    return { success: false, error: appError.message };
-  }
+interface ApiResponse<T> {
+  data: T | null;
+  error: PostgrestError | null;
+  success: boolean;
 }
 
-/**
- * Get message by ID
- */
+async function handleRequest<T>(promise: Promise<{ data: T; error: PostgrestError | null }>): Promise<ApiResponse<T>> {
+  const { data, error } = await promise;
+  if (error) {
+    console.error(error);
+    return { data: null, error, success: false };
+  }
+  return { data, error: null, success: true };
+}
+
 export async function getMessageById(id: string): Promise<ApiResponse<Message>> {
-  try {
-    const { data: message, error } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) throw error;
-
-    return { success: true, data: message };
-  } catch (error) {
-    const appError = handleSupabaseError(error);
-    return { success: false, error: appError.message };
-  }
+  return handleRequest(supabase.from('messages').select('*').eq('id', id).single());
 }
 
-/**
- * Get messages for a user (inbox)
- */
-export async function getInboxMessages(userId: string, limit: number = 50, offset: number = 0): Promise<ApiResponse<Message[]>> {
-  try {
-    const { data: messages, error } = await supabase
+export async function getInboxMessages(userId: string, limit: number, offset: number): Promise<ApiResponse<Message[]>> {
+  return handleRequest(
+    supabase
       .from('messages')
       .select('*')
       .eq('recipient_id', userId)
+      .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    return { success: true, data: messages || [] };
-  } catch (error) {
-    const appError = handleSupabaseError(error);
-    return { success: false, error: appError.message };
-  }
+  );
 }
 
-/**
- * Get sent messages for a user
- */
-export async function getSentMessages(userId: string, limit: number = 50, offset: number = 0): Promise<ApiResponse<Message[]>> {
-  try {
-    const { data: messages, error } = await supabase
+export async function getSentMessages(userId: string, limit: number, offset: number): Promise<ApiResponse<Message[]>> {
+  return handleRequest(
+    supabase
       .from('messages')
       .select('*')
       .eq('sender_id', userId)
+      .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    return { success: true, data: messages || [] };
-  } catch (error) {
-    const appError = handleSupabaseError(error);
-    return { success: false, error: appError.message };
-  }
+  );
 }
 
-/**
- * Get conversation between two users
- */
 export async function getConversation(userId1: string, userId2: string): Promise<ApiResponse<Message[]>> {
-  try {
-    const { data: messages, error } = await supabase
-      .from('messages')
-      .select('*')
-      .or(`and(sender_id.eq.${userId1},recipient_id.eq.${userId2}),and(sender_id.eq.${userId2},recipient_id.eq.${userId1})`)
-      .order('created_at', { ascending: true });
+    const { data: conversation, error } = await supabase
+        .from('conversations')
+        .select('id')
+        .contains('participant_ids', [userId1, userId2])
+        .limit(1)
+        .single();
 
-    if (error) throw error;
+    if (error || !conversation) {
+        return handleRequest(Promise.resolve({data: [], error: error}));
+    }
 
-    return { success: true, data: messages || [] };
-  } catch (error) {
-    const appError = handleSupabaseError(error);
-    return { success: false, error: appError.message };
-  }
+    return handleRequest(
+        supabase
+            .from('messages')
+            .select('*')
+            .eq('conversation_id', conversation.id)
+            .order('created_at', { ascending: true })
+    );
 }
 
-/**
- * Mark message as read
- */
-export async function markMessageAsRead(id: string): Promise<ApiResponse<Message>> {
-  try {
-    const { data: message, error } = await supabase
-      .from('messages')
-      .update({ read: true })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return { success: true, data: message };
-  } catch (error) {
-    const appError = handleSupabaseError(error);
-    return { success: false, error: appError.message };
-  }
-}
-
-/**
- * Mark multiple messages as read
- */
-export async function markMessagesAsRead(messageIds: string[]): Promise<ApiResponse<void>> {
-  try {
-    const { error } = await supabase
-      .from('messages')
-      .update({ read: true })
-      .in('id', messageIds);
-
-    if (error) throw error;
-
-    return { success: true };
-  } catch (error) {
-    const appError = handleSupabaseError(error);
-    return { success: false, error: appError.message };
-  }
-}
-
-/**
- * Delete message
- */
-export async function deleteMessage(id: string): Promise<ApiResponse<void>> {
-  try {
-    const { error } = await supabase
-      .from('messages')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-
-    return { success: true };
-  } catch (error) {
-    const appError = handleSupabaseError(error);
-    return { success: false, error: appError.message };
-  }
-}
-
-/**
- * Get unread message count for a user
- */
 export async function getUnreadMessageCount(userId: string): Promise<ApiResponse<number>> {
-  try {
     const { count, error } = await supabase
-      .from('messages')
-      .select('*', { count: 'exact', head: true })
-      .eq('recipient_id', userId)
-      .eq('read', false);
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', userId)
+        .eq('is_read', false);
 
-    if (error) throw error;
-
-    return { success: true, data: count || 0 };
-  } catch (error) {
-    const appError = handleSupabaseError(error);
-    return { success: false, error: appError.message };
-  }
+    if (error) {
+        console.error(error);
+        return { data: null, error, success: false };
+    }
+    return { data: count, error: null, success: true };
 }
 
-/**
- * Get recent conversations for a user
- */
-export async function getRecentConversations(userId: string, limit: number = 10): Promise<ApiResponse<{
-  otherUserId: string;
-  lastMessage: Message;
-  unreadCount: number;
-}[]>> {
-  try {
-    // Get all messages involving the user
-    const { data: messages, error } = await supabase
-      .from('messages')
+export async function getRecentConversations(userId: string, limit: number): Promise<ApiResponse<Conversation[]>> {
+  return handleRequest(
+    supabase
+      .from('conversations')
       .select('*')
-      .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    if (!messages) return { success: true, data: [] };
-
-    // Group messages by conversation partner
-    const conversationMap = new Map<string, {
-      otherUserId: string;
-      lastMessage: Message;
-      unreadCount: number;
-    }>();
-
-    messages.forEach(message => {
-      const otherUserId = message.sender_id === userId ? message.recipient_id : message.sender_id;
-      
-      if (!conversationMap.has(otherUserId)) {
-        conversationMap.set(otherUserId, {
-          otherUserId,
-          lastMessage: message,
-          unreadCount: 0,
-        });
-      }
-
-      // Count unread messages from the other user
-      if (message.recipient_id === userId && !message.read) {
-        const conversation = conversationMap.get(otherUserId)!;
-        conversation.unreadCount++;
-      }
-    });
-
-    // Convert to array and sort by last message date
-    const conversations = Array.from(conversationMap.values())
-      .sort((a, b) => new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime())
-      .slice(0, limit);
-
-    return { success: true, data: conversations };
-  } catch (error) {
-    const appError = handleSupabaseError(error);
-    return { success: false, error: appError.message };
-  }
-}
-
-/**
- * Search messages by content
- */
-export async function searchMessages(userId: string, searchTerm: string, limit: number = 20): Promise<ApiResponse<Message[]>> {
-  try {
-    const { data: messages, error } = await supabase
-      .from('messages')
-      .select('*')
-      .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-      .or(`subject.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+      .contains('participant_ids', [userId])
+      .order('last_message_at', { ascending: false })
       .limit(limit)
-      .order('created_at', { ascending: false });
+  );
+}
 
-    if (error) throw error;
+export async function searchMessages(userId: string, term: string, limit?: number): Promise<ApiResponse<Message[]>> {
+  let query = supabase
+    .from('messages')
+    .select('*')
+    .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+    .ilike('content', `%${term}%`)
+    .order('created_at', { ascending: false });
 
-    return { success: true, data: messages || [] };
-  } catch (error) {
-    const appError = handleSupabaseError(error);
-    return { success: false, error: appError.message };
+  if (limit) {
+    query = query.limit(limit);
   }
+
+  return handleRequest(query);
+}
+
+export async function sendMessage(messageData: MessageFormData): Promise<ApiResponse<Message>> {
+    let conversationId = messageData.conversation_id;
+
+    // If no conversation_id, check if one exists or create a new one
+    if (!conversationId) {
+        const { data: existingConversation, error: existingConversationError } = await supabase
+            .from('conversations')
+            .select('id')
+            .contains('participant_ids', [messageData.sender_id, messageData.recipient_id])
+            .limit(1)
+            .single();
+
+        if (existingConversation) {
+            conversationId = existingConversation.id;
+        } else {
+            const { data: newConversation, error: newConversationError } = await supabase
+                .from('conversations')
+                .insert({
+                    participant_ids: [messageData.sender_id, messageData.recipient_id],
+                })
+                .select('id')
+                .single();
+
+            if (newConversationError) {
+                return handleRequest(Promise.resolve({ data: null, error: newConversationError }));
+            }
+            conversationId = newConversation.id;
+        }
+    }
+
+    const { data, error } = await supabase
+        .from('messages')
+        .insert({
+            ...messageData,
+            conversation_id: conversationId,
+            is_read: false,
+        })
+        .select()
+        .single();
+    
+    if (error) {
+        return handleRequest(Promise.resolve({ data: null, error }));
+    }
+
+    // Update conversation's last_message_at
+    await supabase
+        .from('conversations')
+        .update({ last_message_at: new Date().toISOString(), last_message_content: messageData.content })
+        .eq('id', conversationId);
+
+    return handleRequest(Promise.resolve({ data, error: null }));
+}
+
+export async function markMessageAsRead(id: string): Promise<ApiResponse<null>> {
+  return handleRequest(supabase.from('messages').update({ is_read: true }).eq('id', id).eq('is_read', false));
+}
+
+export async function markMessagesAsRead(messageIds: string[]): Promise<ApiResponse<null>> {
+    return handleRequest(
+        supabase.from('messages').update({ is_read: true }).in('id', messageIds).eq('is_read', false)
+    );
+}
+
+export async function deleteMessage(id: string): Promise<ApiResponse<null>> {
+  return handleRequest(supabase.from('messages').delete().eq('id', id));
 }

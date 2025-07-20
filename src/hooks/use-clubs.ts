@@ -21,7 +21,7 @@ import { useToast } from './use-toast';
 export const clubKeys = {
   all: ['clubs'] as const,
   lists: () => [...clubKeys.all, 'list'] as const,
-  list: (filters: any) => [...clubKeys.lists(), { filters }] as const,
+  list: (filters: Record<string, unknown>) => [...clubKeys.lists(), { filters }] as const,
   details: () => [...clubKeys.all, 'detail'] as const,
   detail: (id: string) => [...clubKeys.details(), id] as const,
   search: (term: string) => [...clubKeys.all, 'search', term] as const,
@@ -225,4 +225,17 @@ export function useVerifyClub() {
       });
     },
   });
+}
+/**
+ * Hook to fetch verified clubs only
+ */
+export function useVerifiedClubs() {
+  return useClubs({ verified: true });
+}
+
+/**
+ * Hook to fetch unverified clubs only
+ */
+export function useUnverifiedClubs() {
+  return useClubs({ verified: false });
 }

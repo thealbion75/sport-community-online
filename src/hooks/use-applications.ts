@@ -345,3 +345,35 @@ export function useDeleteApplication() {
     },
   });
 }
+
+/**
+ * Hook to get volunteer applications (alias for useApplicationsByVolunteer)
+ */
+export function useVolunteerApplications(volunteerId: string) {
+  return useApplicationsByVolunteer(volunteerId);
+}
+
+/**
+ * Hook to check if an existing application exists for a volunteer and opportunity
+ */
+export function useExistingApplication(opportunityId: string, volunteerId: string) {
+  return useQuery({
+    queryKey: [...applicationKeys.all, 'existing', { opportunityId, volunteerId }],
+    queryFn: async () => {
+      const result = await hasVolunteerApplied(opportunityId, volunteerId);
+      if (result.success && result.data) {
+        // If they have applied, get the application details
+        const applicationsResult = await getApplicationsByVolunteer(volunteerId);
+        if (applicationsResult.success && applicationsResult.data) {
+          const existingApp = applicationsResult.data.find(
+            app => app.opportunity_id === opportunityId
+          );
+          return existingApp || null;
+        }
+      }
+      return null;
+    },
+    enabled: !!(opportunityId && volunteerId),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+}

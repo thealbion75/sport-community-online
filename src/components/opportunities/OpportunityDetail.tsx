@@ -26,9 +26,9 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useOpportunity } from '@/hooks/useOpportunities';
-import { useCreateApplication, useExistingApplication } from '@/hooks/useApplications';
-import { useVolunteerProfile } from '@/hooks/useVolunteers';
+import { useOpportunity } from '@/hooks/use-opportunities';
+import { useCreateApplication, useExistingApplication } from '@/hooks/use-applications';
+import { useVolunteerProfile } from '@/hooks/use-volunteers';
 import { useAuthContext } from '@/contexts/AuthContext';
 import type { VolunteerOpportunity } from '@/types';
 

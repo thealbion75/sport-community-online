@@ -263,7 +263,7 @@ describe('Volunteer Registration to Application Submission Workflow', () => {
           })),
         })),
       })),
-    } as any);
+    } as jest.Mocked<typeof supabase>;
 
     // Navigate to applications (assuming user is logged in)
     await waitFor(() => {

@@ -19,9 +19,9 @@ import {
   Settings
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useVolunteerProfile } from '@/hooks/useVolunteers';
-import { useClubByEmail } from '@/hooks/useClubs';
-import { useUnreadMessageCount } from '@/hooks/useMessages';
+import { useVolunteerProfile } from '@/hooks/use-volunteers';
+import { useClubByEmail } from '@/hooks/use-clubs';
+import { useUnreadMessageCount } from '@/hooks/use-messages';
 import { VolunteerDashboard } from '@/components/volunteers';
 import { ClubDashboard } from '@/components/clubs';
 import { getUserRole, UserRole } from '@/lib/auth';

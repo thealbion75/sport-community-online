@@ -23,7 +23,7 @@ import {
   useSendMessage, 
   useMarkConversationAsRead,
   useDeleteMessage 
-} from '@/hooks/useMessages';
+} from '@/hooks/use-messages';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { Message } from '@/types';

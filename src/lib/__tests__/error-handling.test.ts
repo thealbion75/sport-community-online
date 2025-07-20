@@ -122,7 +122,7 @@ describe('Input Sanitization', () => {
 
     it('should limit string length', () => {
       const input = 'a'.repeat(100);
-      const result = sanitizeUserInput(input, { maxLength: 50 });
+      const result = sanitizeUserInput(input, { maxLength: 50 }););
       
       expect(result.length).toBe(50);
     });

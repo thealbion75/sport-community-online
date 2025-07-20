@@ -103,8 +103,36 @@ const Clubs = () => {
     return (
       <Layout>
         <div className="egsport-container py-12">
-          <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-egsport-blue"></div>
+          <div className="max-w-6xl mx-auto">
+            {/* Loading skeleton for header */}
+            <div className="text-center mb-8 egsport-fade-in">
+              <div className="h-10 bg-muted rounded-lg w-80 mx-auto mb-4 egsport-loading"></div>
+              <div className="h-6 bg-muted rounded-lg w-96 mx-auto mb-4 egsport-loading"></div>
+              <div className="h-10 bg-muted rounded-lg w-64 mx-auto egsport-loading"></div>
+            </div>
+
+            {/* Loading skeleton for search controls */}
+            <div className="flex flex-col md:flex-row gap-4 mb-8">
+              <div className="flex-1 h-10 bg-muted rounded-md egsport-loading"></div>
+              <div className="md:w-64 h-10 bg-muted rounded-md egsport-loading"></div>
+            </div>
+
+            {/* Loading skeleton for clubs grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="egsport-card egsport-loading">
+                  <div className="h-6 bg-muted rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-1/2 mb-4"></div>
+                  <div className="h-4 bg-muted rounded w-full mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-5/6 mb-4"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-4/5"></div>
+                    <div className="h-4 bg-muted rounded w-3/5"></div>
+                    <div className="h-4 bg-muted rounded w-2/3"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </Layout>
@@ -116,12 +144,12 @@ const Clubs = () => {
       <div className="egsport-container py-12">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-4">Sports Clubs Directory</h1>
-            <p className="text-xl text-gray-600 mb-4">
+            <h1 className="egsport-heading mb-4">Sports Clubs Directory</h1>
+            <p className="egsport-body text-xl mb-4">
               Discover local sports clubs and join the community
             </p>
             <Link to="/volunteer-opportunities">
-              <Button className="bg-green-600 hover:bg-green-700">
+              <Button className="egsport-btn-secondary">
                 <Users className="mr-2 h-4 w-4" />
                 View All Volunteer Opportunities
               </Button>
@@ -157,7 +185,7 @@ const Clubs = () => {
 
           {/* Results Count */}
           <div className="mb-6">
-            <p className="text-gray-600">
+            <p className="egsport-caption">
               {filteredClubs.length} club{filteredClubs.length !== 1 ? 's' : ''} found
             </p>
           </div>

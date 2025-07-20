@@ -23,12 +23,12 @@ import { useToast } from './use-toast';
 export const opportunityKeys = {
   all: ['opportunities'] as const,
   lists: () => [...opportunityKeys.all, 'list'] as const,
-  list: (filters: any) => [...opportunityKeys.lists(), { filters }] as const,
+  list: (filters: Record<string, unknown> | undefined) => [...opportunityKeys.lists(), { filters }] as const,
   details: () => [...opportunityKeys.all, 'detail'] as const,
   detail: (id: string) => [...opportunityKeys.details(), id] as const,
   byClub: (clubId: string) => [...opportunityKeys.all, 'club', clubId] as const,
   search: (term: string) => [...opportunityKeys.all, 'search', term] as const,
-  count: (filters: any) => [...opportunityKeys.all, 'count', filters] as const,
+  count: (filters: Record<string, unknown> | undefined) => [...opportunityKeys.all, 'count', filters] as const,
   recent: (limit: number) => [...opportunityKeys.all, 'recent', limit] as const,
 };
 

@@ -88,10 +88,10 @@ export interface Message {
   id: string;
   sender_id: string;
   recipient_id: string;
-  subject: string;
+  conversation_id: string;
   content: string;
-  read: boolean;
   created_at: string;
+  is_read: boolean;
 }
 
 /**
@@ -156,9 +156,10 @@ export interface ApplicationFormData {
 }
 
 export interface MessageFormData {
+  sender_id: string;
   recipient_id: string;
-  subject: string;
   content: string;
+  conversation_id?: string; // Can be optional if a new conversation is being started
 }
 
 /**

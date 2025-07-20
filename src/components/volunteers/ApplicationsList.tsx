@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CheckCircle, XCircle, Clock, Calendar, MapPin, Building, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { useWithdrawApplication } from '@/hooks/useApplications';
+import { useWithdrawApplication } from '@/hooks/use-applications';
 import type { VolunteerApplication } from '@/types';
 
 interface ApplicationsListProps {

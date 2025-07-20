@@ -21,7 +21,7 @@ import {
   Filter
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
-import { useUserMessages, useUnreadMessageCount } from '@/hooks/useMessages';
+import { useUserMessages, useUnreadMessageCount } from '@/hooks/use-messages';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { MessageThread } from './MessageThread';
 import { ComposeMessageDialog } from './ComposeMessageDialog';

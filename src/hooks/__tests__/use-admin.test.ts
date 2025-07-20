@@ -66,14 +66,12 @@ describe('use-admin hooks', () => {
     it('should return false for non-admin users', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
       vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() => ({
-              data: null,
-              error: { code: 'PGRST116' },
-            })),
-          })),
-        })),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: { code: 'PGRST116', message: 'No rows found', details: '', hint: '' },
+        }),
       } as any);
 
       const { result } = renderHook(() => useIsAdmin(), {
@@ -90,14 +88,12 @@ describe('use-admin hooks', () => {
     it('should return true for admin users', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
       vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() => ({
-              data: { is_admin: true },
-              error: null,
-            })),
-          })),
-        })),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: { is_admin: true },
+          error: null,
+        }),
       } as any);
 
       const { result } = renderHook(() => useIsAdmin(), {
@@ -114,14 +110,12 @@ describe('use-admin hooks', () => {
     it('should handle errors gracefully', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
       vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() => ({
-              data: null,
-              error: { message: 'Database error', code: 'ERROR' },
-            })),
-          })),
-        })),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Database error', code: 'ERROR', details: '', hint: '' },
+        }),
       } as any);
 
       const { result } = renderHook(() => useIsAdmin(), {
@@ -140,18 +134,12 @@ describe('use-admin hooks', () => {
     it('should fetch platform statistics successfully', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
       vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            head: vi.fn(() => ({
-              count: 10,
-              error: null,
-            })),
-          })),
-          head: vi.fn(() => ({
-            count: 5,
-            error: null,
-          })),
-        })),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        head: vi.fn().mockResolvedValue({
+          count: 10,
+          error: null,
+        }),
       } as any);
 
       const { result } = renderHook(() => usePlatformStats(), {

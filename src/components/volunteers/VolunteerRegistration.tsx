@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
-import { useCreateVolunteerProfile } from '@/hooks/useVolunteers';
+import { useCreateVolunteerProfile } from '@/hooks/use-volunteers';
 import { useAuthContext } from '@/contexts/AuthContext';
 import type { VolunteerRegistrationData } from '@/types';
 

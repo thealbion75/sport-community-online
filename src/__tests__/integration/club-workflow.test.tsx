@@ -194,7 +194,7 @@ describe('Club Registration to Opportunity Creation Workflow', () => {
           })),
         })),
       })),
-    } as any);
+    } as jest.Mocked<typeof supabase>;
 
     renderApp();
 

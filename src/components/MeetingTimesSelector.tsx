@@ -13,8 +13,8 @@ interface MeetingTime {
 }
 
 interface MeetingTimesSelectorProps {
-  control: Control<any>;
-  name: string;
+  control: Control<{ meetingTimes: MeetingTime[] }>;
+  name: 'meetingTimes';
 }
 
 const DAYS_OF_WEEK = [

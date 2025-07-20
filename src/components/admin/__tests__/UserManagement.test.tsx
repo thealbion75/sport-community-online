@@ -9,6 +9,8 @@ import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { UserManagement } from '../UserManagement';
 import type { VolunteerProfile, Club } from '@/types';
+import { useSearchVolunteers } from '@/hooks/use-volunteers';
+import { useVerifiedClubs } from '@/hooks/use-clubs';
 
 // Mock the hooks
 vi.mock('@/hooks/use-volunteers', () => ({
@@ -73,18 +75,15 @@ describe('UserManagement', () => {
   });
 
   it('renders the user management interface', async () => {
-    const { useSearchVolunteers } = await import('@/hooks/use-volunteers');
-    const { useVerifiedClubs } = await import('@/hooks/use-clubs');
-
     vi.mocked(useSearchVolunteers).mockReturnValue({
-      data: { data: mockVolunteers },
+      data: { data: mockVolunteers, count: 1, page: 1, limit: 10, total_pages: 1 },
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useSearchVolunteers>);
 
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: mockClubs,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     renderWithProviders(<UserManagement />);
 
@@ -93,18 +92,15 @@ describe('UserManagement', () => {
   });
 
   it('displays user statistics correctly', async () => {
-    const { useSearchVolunteers } = await import('@/hooks/use-volunteers');
-    const { useVerifiedClubs } = await import('@/hooks/use-clubs');
-
     vi.mocked(useSearchVolunteers).mockReturnValue({
-      data: { data: mockVolunteers },
+      data: { data: mockVolunteers, count: 1, page: 1, limit: 10, total_pages: 1 },
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useSearchVolunteers>);
 
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: mockClubs,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     renderWithProviders(<UserManagement />);
 
@@ -116,18 +112,15 @@ describe('UserManagement', () => {
   });
 
   it('allows searching for users', async () => {
-    const { useSearchVolunteers } = await import('@/hooks/use-volunteers');
-    const { useVerifiedClubs } = await import('@/hooks/use-clubs');
-
     vi.mocked(useSearchVolunteers).mockReturnValue({
-      data: { data: mockVolunteers },
+      data: { data: mockVolunteers, count: 1, page: 1, limit: 10, total_pages: 1 },
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useSearchVolunteers>);
 
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: mockClubs,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     renderWithProviders(<UserManagement />);
 
@@ -138,18 +131,15 @@ describe('UserManagement', () => {
   });
 
   it('displays user information correctly', async () => {
-    const { useSearchVolunteers } = await import('@/hooks/use-volunteers');
-    const { useVerifiedClubs } = await import('@/hooks/use-clubs');
-
     vi.mocked(useSearchVolunteers).mockReturnValue({
-      data: { data: mockVolunteers },
+      data: { data: mockVolunteers, count: 1, page: 1, limit: 10, total_pages: 1 },
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useSearchVolunteers>);
 
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: mockClubs,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     renderWithProviders(<UserManagement />);
 
@@ -161,18 +151,15 @@ describe('UserManagement', () => {
   });
 
   it('allows filtering users by type', async () => {
-    const { useSearchVolunteers } = await import('@/hooks/use-volunteers');
-    const { useVerifiedClubs } = await import('@/hooks/use-clubs');
-
     vi.mocked(useSearchVolunteers).mockReturnValue({
-      data: { data: mockVolunteers },
+      data: { data: mockVolunteers, count: 1, page: 1, limit: 10, total_pages: 1 },
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useSearchVolunteers>);
 
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: mockClubs,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     renderWithProviders(<UserManagement />);
 
@@ -191,18 +178,15 @@ describe('UserManagement', () => {
   });
 
   it('shows empty state when no users are found', async () => {
-    const { useSearchVolunteers } = await import('@/hooks/use-volunteers');
-    const { useVerifiedClubs } = await import('@/hooks/use-clubs');
-
     vi.mocked(useSearchVolunteers).mockReturnValue({
-      data: { data: [] },
+      data: { data: [], count: 0, page: 1, limit: 10, total_pages: 0 },
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useSearchVolunteers>);
 
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     renderWithProviders(<UserManagement />);
 
@@ -212,18 +196,15 @@ describe('UserManagement', () => {
   });
 
   it('allows viewing user details', async () => {
-    const { useSearchVolunteers } = await import('@/hooks/use-volunteers');
-    const { useVerifiedClubs } = await import('@/hooks/use-clubs');
-
     vi.mocked(useSearchVolunteers).mockReturnValue({
-      data: { data: mockVolunteers },
+      data: { data: mockVolunteers, count: 1, page: 1, limit: 10, total_pages: 1 },
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useSearchVolunteers>);
 
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: mockClubs,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     renderWithProviders(<UserManagement />);
 

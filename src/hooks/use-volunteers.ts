@@ -23,14 +23,14 @@ import { useToast } from './use-toast';
 export const volunteerKeys = {
   all: ['volunteers'] as const,
   lists: () => [...volunteerKeys.all, 'list'] as const,
-  list: (filters: any) => [...volunteerKeys.lists(), { filters }] as const,
+  list: (filters: Record<string, unknown>) => [...volunteerKeys.lists(), { filters }] as const,
   details: () => [...volunteerKeys.all, 'detail'] as const,
   detail: (id: string) => [...volunteerKeys.details(), id] as const,
   byUserId: (userId: string) => [...volunteerKeys.all, 'user', userId] as const,
-  search: (filters: any) => [...volunteerKeys.all, 'search', filters] as const,
+  search: (filters: Record<string, unknown>) => [...volunteerKeys.all, 'search', filters] as const,
   searchText: (term: string) => [...volunteerKeys.all, 'searchText', term] as const,
   visible: (limit: number, offset: number) => [...volunteerKeys.all, 'visible', { limit, offset }] as const,
-  count: (filters: any) => [...volunteerKeys.all, 'count', filters] as const,
+  count: (filters: Record<string, unknown> | undefined) => [...volunteerKeys.all, 'count', filters] as const,
 };
 
 /**
@@ -251,4 +251,11 @@ export function useUpdateVolunteerVisibility() {
       });
     },
   });
+}
+
+/**
+ * Hook to update profile visibility (alias for useUpdateVolunteerVisibility)
+ */
+export function useUpdateProfileVisibility() {
+  return useUpdateVolunteerVisibility();
 }

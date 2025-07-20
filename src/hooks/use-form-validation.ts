@@ -12,7 +12,7 @@ import { sanitizeObject } from '@/lib/sanitization';
 import { useFormErrorHandler } from './use-error-handling';
 
 interface UseValidatedFormProps<TFormValues extends FieldValues> extends UseFormProps<TFormValues> {
-  schema: z.ZodType<any, any>;
+  schema: z.ZodType<TFormValues, z.ZodTypeDef, TFormValues>;
   sanitizeOnSubmit?: boolean;
   onSubmit: (data: TFormValues) => Promise<void> | void;
   onError?: (error: unknown) => void;
@@ -61,7 +61,7 @@ export function useFieldValidation<TFormValues extends FieldValues>(
   const fieldError = form.formState.errors[fieldName];
   const fieldValue = form.watch(fieldName);
   
-  const validateField = useCallback(async (value: any) => {
+  const validateField = useCallback(async () => {
     try {
       await form.trigger(fieldName);
       return true;
@@ -125,7 +125,7 @@ export function useAsyncValidation<T>(
 }
 
 // Debounce utility
-function debounce<T extends (...args: any[]) => any>(
+function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {

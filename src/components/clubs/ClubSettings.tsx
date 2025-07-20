@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, AlertCircle } from 'lucide-react';
-import { useUpdateClub } from '@/hooks/useClubs';
+import { useUpdateClub } from '@/hooks/use-clubs';
 import type { Club, ClubRegistrationData } from '@/types';
 
 // Validation schema

@@ -76,14 +76,12 @@ describe('use-sports-council hooks', () => {
 
       const { supabase } = await import('@/integrations/supabase/client');
       vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            order: vi.fn(() => ({
-              data: mockMeetings,
-              error: null,
-            })),
-          })),
-        })),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({
+          data: mockMeetings,
+          error: null,
+        }),
       } as any);
 
       const { result } = renderHook(() => usePublicMeetings(), {
@@ -101,14 +99,12 @@ describe('use-sports-council hooks', () => {
     it('should handle errors when fetching meetings', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
       vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            order: vi.fn(() => ({
-              data: null,
-              error: { message: 'Database error' },
-            })),
-          })),
-        })),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Database error', code: 'ERROR', details: '', hint: '' },
+        }),
       } as any);
 
       const { result } = renderHook(() => usePublicMeetings(), {
@@ -127,14 +123,12 @@ describe('use-sports-council hooks', () => {
     it('should return false for non-admin users', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
       vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() => ({
-              data: null,
-              error: { code: 'PGRST116' },
-            })),
-          })),
-        })),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: { code: 'PGRST116', message: 'No rows found', details: '', hint: '' },
+        }),
       } as any);
 
       const { result } = renderHook(() => useIsSportsCouncilAdmin('test@example.com'), {
@@ -151,14 +145,12 @@ describe('use-sports-council hooks', () => {
     it('should return true for admin users', async () => {
       const { supabase } = await import('@/integrations/supabase/client');
       vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() => ({
-              data: { id: 'admin-id' },
-              error: null,
-            })),
-          })),
-        })),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: { id: 'admin-id' },
+          error: null,
+        }),
       } as any);
 
       const { result } = renderHook(() => useIsSportsCouncilAdmin('admin@sportscouncil.local'), {

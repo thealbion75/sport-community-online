@@ -46,7 +46,7 @@ export const VolunteerFilters: React.FC<VolunteerFiltersProps> = ({
   filters,
   onFiltersChange
 }) => {
-  const updateFilter = (key: keyof VolunteerFiltersType, value: any) => {
+  const updateFilter = (key: keyof VolunteerFiltersType, value: string | number | string[] | undefined) => {
     onFiltersChange({
       ...filters,
       [key]: value

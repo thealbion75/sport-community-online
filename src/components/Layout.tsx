@@ -38,10 +38,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             <div className="hidden md:flex items-center space-x-6">
               <Link 
                 to="/" 
-                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`egsport-nav-link ${
                   location.pathname === '/' 
-                    ? 'bg-egsport-blue text-white' 
-                    : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                    ? 'egsport-nav-link-active' 
+                    : 'egsport-nav-link-inactive'
                 }`}
               >
                 <Home className="h-4 w-4" />
@@ -50,10 +50,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               
               <Link 
                 to="/clubs" 
-                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`egsport-nav-link ${
                   location.pathname === '/clubs' 
-                    ? 'bg-egsport-blue text-white' 
-                    : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                    ? 'egsport-nav-link-active' 
+                    : 'egsport-nav-link-inactive'
                 }`}
               >
                 <Building className="h-4 w-4" />
@@ -61,11 +61,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               </Link>
               
               <Link 
-                to="/opportunities" 
-                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  location.pathname.startsWith('/opportunities') 
-                    ? 'bg-egsport-blue text-white' 
-                    : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                to="/volunteer-opportunities" 
+                className={`egsport-nav-link ${
+                  location.pathname.startsWith('/volunteer-opportunities') 
+                    ? 'egsport-nav-link-active' 
+                    : 'egsport-nav-link-inactive'
                 }`}
               >
                 <Users className="h-4 w-4" />
@@ -74,10 +74,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
               <Link 
                 to="/sports-council" 
-                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`egsport-nav-link ${
                   location.pathname.startsWith('/sports-council') 
-                    ? 'bg-egsport-blue text-white' 
-                    : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                    ? 'egsport-nav-link-active' 
+                    : 'egsport-nav-link-inactive'
                 }`}
               >
                 <Calendar className="h-4 w-4" />
@@ -88,10 +88,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               {user && (
                 <Link 
                   to="/messages" 
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors relative ${
+                  className={`egsport-nav-link relative ${
                     location.pathname.startsWith('/messages') 
-                      ? 'bg-egsport-blue text-white' 
-                      : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                      ? 'egsport-nav-link-active' 
+                      : 'egsport-nav-link-inactive'
                   }`}
                 >
                   <MessageSquare className="h-4 w-4" />
@@ -113,12 +113,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               ) : (
                 <div className="flex items-center space-x-2">
                   <Link to="/login">
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="text-gray-700 hover:text-primary hover:bg-primary/10">
                       Sign In
                     </Button>
                   </Link>
                   <Link to="/register">
-                    <Button size="sm" className="bg-egsport-blue hover:bg-egsport-blue/90">
+                    <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
                       Register Club
                     </Button>
                   </Link>
@@ -132,10 +132,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             <div className="flex flex-col space-y-2">
               <Link 
                 to="/" 
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`egsport-nav-link ${
                   location.pathname === '/' 
-                    ? 'bg-egsport-blue text-white' 
-                    : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                    ? 'egsport-nav-link-active' 
+                    : 'egsport-nav-link-inactive'
                 }`}
               >
                 <Home className="h-4 w-4" />
@@ -144,10 +144,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               
               <Link 
                 to="/clubs" 
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`egsport-nav-link ${
                   location.pathname === '/clubs' 
-                    ? 'bg-egsport-blue text-white' 
-                    : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                    ? 'egsport-nav-link-active' 
+                    : 'egsport-nav-link-inactive'
                 }`}
               >
                 <Building className="h-4 w-4" />
@@ -155,11 +155,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               </Link>
               
               <Link 
-                to="/opportunities" 
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  location.pathname.startsWith('/opportunities') 
-                    ? 'bg-egsport-blue text-white' 
-                    : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                to="/volunteer-opportunities" 
+                className={`egsport-nav-link ${
+                  location.pathname.startsWith('/volunteer-opportunities') 
+                    ? 'egsport-nav-link-active' 
+                    : 'egsport-nav-link-inactive'
                 }`}
               >
                 <Users className="h-4 w-4" />
@@ -168,10 +168,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
               <Link 
                 to="/sports-council" 
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`egsport-nav-link ${
                   location.pathname.startsWith('/sports-council') 
-                    ? 'bg-egsport-blue text-white' 
-                    : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                    ? 'egsport-nav-link-active' 
+                    : 'egsport-nav-link-inactive'
                 }`}
               >
                 <Calendar className="h-4 w-4" />
@@ -182,10 +182,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               {user && (
                 <Link 
                   to="/messages" 
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`egsport-nav-link ${
                     location.pathname.startsWith('/messages') 
-                      ? 'bg-egsport-blue text-white' 
-                      : 'text-gray-700 hover:text-egsport-blue hover:bg-gray-100'
+                      ? 'egsport-nav-link-active' 
+                      : 'egsport-nav-link-inactive'
                   }`}
                 >
                   <MessageSquare className="h-4 w-4" />

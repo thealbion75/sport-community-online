@@ -21,7 +21,7 @@ import {
   Settings
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
-import { useUnreadMessages, useUnreadMessageCount, useMarkMessageAsRead } from '@/hooks/useMessages';
+import { useUnreadMessages, useUnreadMessageCount, useMarkMessageAsRead } from '@/hooks/use-messages';
 import { useAuthContext } from '@/contexts/AuthContext';
 import type { Message } from '@/types';
 
@@ -34,7 +34,7 @@ interface Notification {
   read: boolean;
   actionUrl?: string;
   avatar?: string;
-  data?: any;
+  data?: Message;
 }
 
 interface NotificationBellProps {

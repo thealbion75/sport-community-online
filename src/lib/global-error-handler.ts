@@ -69,7 +69,7 @@ function handleUnhandledRejection(event: PromiseRejectionEvent) {
  * Log error to external monitoring service
  * Replace this with your actual error logging service (e.g., Sentry, LogRocket, etc.)
  */
-function logErrorToService(errorData: any) {
+function logErrorToService(errorData: Record<string, unknown>) {
   // Example implementation - replace with your actual service
   try {
     // You could send to services like:

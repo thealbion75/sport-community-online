@@ -17,8 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, MapPin, Calendar, Info } from 'lucide-react';
 import { format } from 'date-fns';
-import { useSendMessage } from '@/hooks/useMessages';
-import { useClubByEmail } from '@/hooks/useClubs';
+import { useSendMessage } from '@/hooks/use-messages';
+import { useClubByEmail } from '@/hooks/use-clubs';
 import { useAuthContext } from '@/contexts/AuthContext';
 import type { VolunteerProfile, MessageFormData } from '@/types';
 

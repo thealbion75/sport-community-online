@@ -18,9 +18,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronsUpDown, Send, Users, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSendMessage } from '@/hooks/useMessages';
-import { useSearchVolunteers } from '@/hooks/useVolunteers';
-import { useVerifiedClubs } from '@/hooks/useClubs';
+import { useSendMessage } from '@/hooks/use-messages';
+import { useSearchVolunteers } from '@/hooks/use-volunteers';
+import { useVerifiedClubs } from '@/hooks/use-clubs';
 import { useAuthContext } from '@/contexts/AuthContext';
 import type { MessageFormData } from '@/types';
 

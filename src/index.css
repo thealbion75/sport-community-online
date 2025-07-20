@@ -5,83 +5,158 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
+    /* Enhanced EGSport Brand Colors */
+    --egsport-blue-50: 214 100% 97%;
+    --egsport-blue-100: 214 95% 93%;
+    --egsport-blue-200: 213 97% 87%;
+    --egsport-blue-300: 212 96% 78%;
+    --egsport-blue-400: 213 94% 68%;
+    --egsport-blue-500: 217 91% 60%;  /* Primary blue */
+    --egsport-blue-600: 221 83% 53%;
+    --egsport-blue-700: 224 76% 48%;
+    --egsport-blue-800: 226 71% 40%;
+    --egsport-blue-900: 224 64% 33%;
+
+    --egsport-green-50: 166 76% 97%;
+    --egsport-green-100: 166 85% 90%;
+    --egsport-green-200: 165 85% 80%;
+    --egsport-green-300: 166 77% 67%;
+    --egsport-green-400: 167 68% 52%;
+    --egsport-green-500: 160 84% 39%;  /* Primary green */
+    --egsport-green-600: 158 64% 52%;
+    --egsport-green-700: 158 64% 52%;
+    --egsport-green-800: 159 61% 41%;
+    --egsport-green-900: 159 61% 33%;
+
+    /* Semantic Colors */
+    --success: var(--egsport-green-500);
+    --warning: 45 93% 47%;
+    --error: 0 84% 60%;
+    --info: var(--egsport-blue-500);
+
+    /* Enhanced Neutral Palette */
+    --gray-50: 210 20% 98%;
+    --gray-100: 220 14% 96%;
+    --gray-200: 220 13% 91%;
+    --gray-300: 216 12% 84%;
+    --gray-400: 218 11% 65%;
+    --gray-500: 220 9% 46%;
+    --gray-600: 215 14% 34%;
+    --gray-700: 217 19% 27%;
+    --gray-800: 215 28% 17%;
+    --gray-900: 222 84% 5%;
+
+    /* Typography Scale */
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    --text-xs: 0.75rem;    /* 12px */
+    --text-sm: 0.875rem;   /* 14px */
+    --text-base: 1rem;     /* 16px */
+    --text-lg: 1.125rem;   /* 18px */
+    --text-xl: 1.25rem;    /* 20px */
+    --text-2xl: 1.5rem;    /* 24px */
+    --text-3xl: 1.875rem;  /* 30px */
+    --text-4xl: 2.25rem;   /* 36px */
+    --text-5xl: 3rem;      /* 48px */
+
+    --leading-tight: 1.25;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+
+    /* Spacing Scale */
+    --space-1: 0.25rem;   /* 4px */
+    --space-2: 0.5rem;    /* 8px */
+    --space-3: 0.75rem;   /* 12px */
+    --space-4: 1rem;      /* 16px */
+    --space-5: 1.25rem;   /* 20px */
+    --space-6: 1.5rem;    /* 24px */
+    --space-8: 2rem;      /* 32px */
+    --space-10: 2.5rem;   /* 40px */
+    --space-12: 3rem;     /* 48px */
+    --space-16: 4rem;     /* 64px */
+    --space-20: 5rem;     /* 80px */
+    --space-24: 6rem;     /* 96px */
+
+    /* Shadcn/UI Compatible Variables */
+    --background: var(--gray-50);
+    --foreground: var(--gray-900);
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: var(--gray-900);
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: var(--gray-900);
 
-    --primary: 196 94% 48%;  /* EGSport blue */
-    --primary-foreground: 210 40% 98%;
+    --primary: var(--egsport-blue-500);
+    --primary-foreground: 255 255 255;
 
-    --secondary: 160 84% 39%;  /* EGSport green */
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: var(--egsport-green-500);
+    --secondary-foreground: 255 255 255;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: var(--gray-100);
+    --muted-foreground: var(--gray-500);
 
-    --accent: 160 84% 39%;  /* EGSport green */
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: var(--egsport-green-500);
+    --accent-foreground: 255 255 255;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: var(--error);
+    --destructive-foreground: 255 255 255;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 196 94% 48%;  /* EGSport blue */
+    --border: var(--gray-200);
+    --input: var(--gray-200);
+    --ring: var(--egsport-blue-500);
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar Variables */
+    --sidebar-background: var(--gray-50);
+    --sidebar-foreground: var(--gray-700);
+    --sidebar-primary: var(--gray-900);
+    --sidebar-primary-foreground: 255 255 255;
+    --sidebar-accent: var(--gray-100);
+    --sidebar-accent-foreground: var(--gray-900);
+    --sidebar-border: var(--gray-200);
+    --sidebar-ring: var(--egsport-blue-500);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: var(--gray-900);
+    --foreground: var(--gray-50);
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: var(--gray-800);
+    --card-foreground: var(--gray-50);
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: var(--gray-800);
+    --popover-foreground: var(--gray-50);
 
-    --primary: 196 94% 48%;  /* EGSport blue */
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: var(--egsport-blue-500);
+    --primary-foreground: 255 255 255;
 
-    --secondary: 160 84% 39%;  /* EGSport green */
-    --secondary-foreground: 210 40% 98%;
+    --secondary: var(--egsport-green-500);
+    --secondary-foreground: 255 255 255;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: var(--gray-800);
+    --muted-foreground: var(--gray-400);
 
-    --accent: 160 84% 39%;  /* EGSport green */
-    --accent-foreground: 210 40% 98%;
+    --accent: var(--egsport-green-500);
+    --accent-foreground: 255 255 255;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: var(--error);
+    --destructive-foreground: 255 255 255;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 196 94% 48%;  /* EGSport blue */
+    --border: var(--gray-700);
+    --input: var(--gray-700);
+    --ring: var(--egsport-blue-500);
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: var(--gray-900);
+    --sidebar-foreground: var(--gray-300);
+    --sidebar-primary: var(--egsport-blue-500);
+    --sidebar-primary-foreground: 255 255 255;
+    --sidebar-accent: var(--gray-800);
+    --sidebar-accent-foreground: var(--gray-300);
+    --sidebar-border: var(--gray-700);
+    --sidebar-ring: var(--egsport-blue-500);
   }
 }
 
@@ -92,6 +167,7 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
   }
 
   .egsport-container {
@@ -99,15 +175,108 @@
   }
 }
 
-/* Custom styles for EGSport */
-.egsport-heading {
-  @apply text-3xl md:text-4xl font-bold text-egsport-dark;
-}
+@layer components {
+  /* Enhanced Typography System */
+  .egsport-heading {
+    @apply text-3xl md:text-4xl font-bold text-foreground leading-tight;
+  }
 
-.egsport-subheading {
-  @apply text-xl md:text-2xl font-semibold text-egsport-dark/80;
-}
+  .egsport-subheading {
+    @apply text-xl md:text-2xl font-semibold text-foreground leading-normal;
+  }
 
-.egsport-card {
-  @apply bg-white rounded-lg shadow-md p-6 transition-all duration-300 hover:shadow-lg;
+  .egsport-body {
+    @apply text-base text-foreground/80 leading-relaxed;
+  }
+
+  .egsport-caption {
+    @apply text-sm text-muted-foreground leading-normal;
+  }
+
+  /* Enhanced Card System */
+  .egsport-card {
+    @apply bg-card text-card-foreground rounded-lg border shadow-sm p-6 transition-all duration-300 hover:shadow-md;
+  }
+
+  .egsport-card-elevated {
+    @apply bg-card text-card-foreground rounded-lg shadow-md p-6 transition-all duration-300 hover:shadow-lg;
+  }
+
+  .egsport-card-interactive {
+    @apply bg-card text-card-foreground rounded-lg border shadow-sm p-6 transition-all duration-300 hover:shadow-md hover:border-primary/20 cursor-pointer;
+  }
+
+  /* Button Enhancements */
+  .egsport-btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200;
+  }
+
+  .egsport-btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90 focus:ring-2 focus:ring-secondary focus:ring-offset-2 transition-all duration-200;
+  }
+
+  /* Form Enhancements */
+  .egsport-input {
+    @apply border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200;
+  }
+
+  .egsport-label {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  /* Layout Utilities */
+  .egsport-section {
+    @apply py-16 md:py-20;
+  }
+
+  .egsport-section-sm {
+    @apply py-8 md:py-12;
+  }
+
+  .egsport-section-lg {
+    @apply py-20 md:py-24;
+  }
+
+  /* Navigation Enhancements */
+  .egsport-nav-link {
+    @apply flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200;
+  }
+
+  .egsport-nav-link-active {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .egsport-nav-link-inactive {
+    @apply text-gray-700 hover:text-primary hover:bg-primary/10;
+  }
+
+  /* Status and Feedback */
+  .egsport-badge-success {
+    @apply bg-success/10 text-success border border-success/20 rounded-full px-2 py-1 text-xs font-medium;
+  }
+
+  .egsport-badge-warning {
+    @apply bg-warning/10 text-warning border border-warning/20 rounded-full px-2 py-1 text-xs font-medium;
+  }
+
+  .egsport-badge-error {
+    @apply bg-error/10 text-error border border-error/20 rounded-full px-2 py-1 text-xs font-medium;
+  }
+
+  .egsport-badge-info {
+    @apply bg-info/10 text-info border border-info/20 rounded-full px-2 py-1 text-xs font-medium;
+  }
+
+  /* Loading and Animation */
+  .egsport-loading {
+    @apply animate-pulse;
+  }
+
+  .egsport-fade-in {
+    @apply animate-in fade-in duration-300;
+  }
+
+  .egsport-slide-up {
+    @apply animate-in slide-in-from-bottom-4 duration-300;
+  }
 }

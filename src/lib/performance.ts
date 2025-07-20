@@ -246,7 +246,7 @@ export const BundleOptimizer = {
           }
           throw promise;
         }
-        return (component as any)[prop];
+        return (component as Record<string, unknown>)[prop];
       }
     });
   },
@@ -254,7 +254,7 @@ export const BundleOptimizer = {
   /**
    * Preload module
    */
-  preloadModule(importFn: () => Promise<any>): void {
+  preloadModule(importFn: () => Promise<unknown>): void {
     // Start loading the module but don't wait for it
     importFn().catch(() => {
       // Ignore errors during preloading
@@ -348,7 +348,7 @@ export const MemoryOptimizer = {
     percentage: number;
   } | null {
     if ('memory' in performance) {
-      const memory = (performance as any).memory;
+      const memory = performance.memory as { usedJSHeapSize: number; totalJSHeapSize: number };
       return {
         used: memory.usedJSHeapSize,
         total: memory.totalJSHeapSize,

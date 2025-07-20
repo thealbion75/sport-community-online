@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, Trash2, Eye, Users, Calendar, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
-import { useUpdateOpportunityStatus, useDeleteOpportunity } from '@/hooks/useOpportunities';
+import { useUpdateOpportunityStatus, useDeleteOpportunity } from '@/hooks/use-opportunities';
 import type { VolunteerOpportunity } from '@/types';
 
 interface OpportunityListProps {

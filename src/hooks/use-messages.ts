@@ -17,8 +17,8 @@ import {
   getRecentConversations,
   searchMessages
 } from '@/lib/supabase/messages';
-import { Message, MessageFormData } from '@/types';
-import { useToast } from './use-toast';
+import { Message, MessageFormData, Conversation } from '@/types/volunteer';
+import { useToast } from '@/hooks/use-toast';
 
 // Query keys
 export const messageKeys = {
@@ -141,20 +141,19 @@ export function useSendMessage() {
         toast({
           title: 'Success',
           description: 'Message sent successfully!',
-          variant: 'success',
         });
       } else {
         toast({
           title: 'Error',
-          description: result.error || 'Failed to send message',
+          description: result.error?.message || 'Failed to send message',
           variant: 'destructive',
         });
       }
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
-        description: 'Failed to send message. Please try again.',
+        description: error.message || 'Failed to send message. Please try again.',
         variant: 'destructive',
       });
     },
@@ -219,22 +218,102 @@ export function useDeleteMessage() {
         toast({
           title: 'Success',
           description: 'Message deleted successfully!',
-          variant: 'success',
         });
       } else {
         toast({
           title: 'Error',
-          description: result.error || 'Failed to delete message',
+          description: result.error?.message || 'Failed to delete message',
           variant: 'destructive',
         });
       }
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
-        description: 'Failed to delete message. Please try again.',
+        description: error.message || 'Failed to delete message. Please try again.',
         variant: 'destructive',
       });
+    },
+  });
+}
+
+/**
+ * Hook to get user messages (combines inbox and sent)
+ */
+export function useUserMessages(userId: string, limit: number = 50, offset: number = 0) {
+  const inboxQuery = useInboxMessages(userId, limit, offset);
+  const sentQuery = useSentMessages(userId, limit, offset);
+
+  return {
+    data: {
+      inbox: inboxQuery.data || [],
+      sent: sentQuery.data || [],
+      all: [...(inboxQuery.data || []), ...(sentQuery.data || [])].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+    },
+    isLoading: inboxQuery.isLoading || sentQuery.isLoading,
+    error: inboxQuery.error || sentQuery.error,
+    refetch: () => {
+      inboxQuery.refetch();
+      sentQuery.refetch();
+    }
+  };
+}
+
+/**
+ * Hook to get unread messages
+ */
+export function useUnreadMessages(userId: string, limit: number = 50) {
+  return useQuery({
+    queryKey: [...messageKeys.all, 'unread', userId, limit],
+    queryFn: () => getInboxMessages(userId, limit, 0),
+    select: (data) => {
+      if (data.success && data.data) {
+        return data.data.filter(message => !message.read);
+      }
+      return [];
+    },
+    enabled: !!userId,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+/**
+ * Hook to mark conversation as read
+ */
+export function useMarkConversationAsRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userId1, userId2 }: { userId1: string; userId2: string }) => {
+      // Get conversation messages first
+      const conversationResult = await getConversation(userId1, userId2);
+      if (conversationResult.success && conversationResult.data) {
+        // Get unread message IDs
+        const unreadMessageIds = conversationResult.data
+          .filter(message => !message.read && message.recipient_id === userId1)
+          .map(message => message.id);
+        
+        if (unreadMessageIds.length > 0) {
+          return markMessagesAsRead(unreadMessageIds);
+        }
+      }
+      return { success: true, data: null };
+    },
+    onSuccess: (result, variables) => {
+      if (result.success) {
+        queryClient.invalidateQueries({ 
+          queryKey: messageKeys.conversation(variables.userId1, variables.userId2) 
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: messageKeys.unreadCount(variables.userId1) 
+        });
+        queryClient.invalidateQueries({ queryKey: messageKeys.lists() });
+      }
+    },
+    onError: () => {
+      console.error('Failed to mark conversation as read');
     },
   });
 }

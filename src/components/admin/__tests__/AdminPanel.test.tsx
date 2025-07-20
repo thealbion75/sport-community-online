@@ -9,6 +9,8 @@ import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { AdminPanel } from '../AdminPanel';
 import type { PlatformStats } from '@/types';
+import { useVerifiedClubs, useUnverifiedClubs } from '@/hooks/use-clubs';
+import { usePlatformStats } from '@/hooks/use-admin';
 
 // Mock the hooks
 vi.mock('@/hooks/use-clubs', () => ({
@@ -53,23 +55,20 @@ describe('AdminPanel', () => {
   });
 
   it('renders the admin panel with platform statistics', async () => {
-    const { useVerifiedClubs, useUnverifiedClubs } = await import('@/hooks/use-clubs');
-    const { usePlatformStats } = await import('@/hooks/use-admin');
-
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     vi.mocked(useUnverifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useUnverifiedClubs>);
 
     vi.mocked(usePlatformStats).mockReturnValue({
       data: mockStats,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof usePlatformStats>);
 
     renderWithProviders(<AdminPanel />);
 
@@ -78,23 +77,20 @@ describe('AdminPanel', () => {
   });
 
   it('displays platform statistics correctly', async () => {
-    const { useVerifiedClubs, useUnverifiedClubs } = await import('@/hooks/use-clubs');
-    const { usePlatformStats } = await import('@/hooks/use-admin');
-
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     vi.mocked(useUnverifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useUnverifiedClubs>);
 
     vi.mocked(usePlatformStats).mockReturnValue({
       data: mockStats,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof usePlatformStats>);
 
     renderWithProviders(<AdminPanel />);
 
@@ -106,23 +102,20 @@ describe('AdminPanel', () => {
   });
 
   it('shows pending verification alert when clubs need verification', async () => {
-    const { useVerifiedClubs, useUnverifiedClubs } = await import('@/hooks/use-clubs');
-    const { usePlatformStats } = await import('@/hooks/use-admin');
-
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     vi.mocked(useUnverifiedClubs).mockReturnValue({
-      data: [{ id: '1', name: 'Test Club' }],
+      data: [{ id: '1', name: 'Test Club', sport_types: [], verified: false, created_at: '', updated_at: '', location: '', contact_email: '' }],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useUnverifiedClubs>);
 
     vi.mocked(usePlatformStats).mockReturnValue({
       data: mockStats,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof usePlatformStats>);
 
     renderWithProviders(<AdminPanel />);
 
@@ -133,23 +126,20 @@ describe('AdminPanel', () => {
   });
 
   it('allows navigation between admin tabs', async () => {
-    const { useVerifiedClubs, useUnverifiedClubs } = await import('@/hooks/use-clubs');
-    const { usePlatformStats } = await import('@/hooks/use-admin');
-
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     vi.mocked(useUnverifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useUnverifiedClubs>);
 
     vi.mocked(usePlatformStats).mockReturnValue({
       data: mockStats,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof usePlatformStats>);
 
     renderWithProviders(<AdminPanel />);
 
@@ -169,23 +159,20 @@ describe('AdminPanel', () => {
   });
 
   it('displays quick actions for common admin tasks', async () => {
-    const { useVerifiedClubs, useUnverifiedClubs } = await import('@/hooks/use-clubs');
-    const { usePlatformStats } = await import('@/hooks/use-admin');
-
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     vi.mocked(useUnverifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useUnverifiedClubs>);
 
     vi.mocked(usePlatformStats).mockReturnValue({
       data: mockStats,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof usePlatformStats>);
 
     renderWithProviders(<AdminPanel />);
 
@@ -199,23 +186,20 @@ describe('AdminPanel', () => {
   });
 
   it('handles missing platform stats gracefully', async () => {
-    const { useVerifiedClubs, useUnverifiedClubs } = await import('@/hooks/use-clubs');
-    const { usePlatformStats } = await import('@/hooks/use-admin');
-
     vi.mocked(useVerifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useVerifiedClubs>);
 
     vi.mocked(useUnverifiedClubs).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useUnverifiedClubs>);
 
     vi.mocked(usePlatformStats).mockReturnValue({
       data: undefined,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof usePlatformStats>);
 
     renderWithProviders(<AdminPanel />);
 

@@ -21,7 +21,7 @@ import {
   Lightbulb,
   TrendingUp
 } from 'lucide-react';
-import { useSearchVolunteers } from '@/hooks/useVolunteers';
+import { useSearchVolunteers } from '@/hooks/use-volunteers';
 import { ContactVolunteerDialog } from './ContactVolunteerDialog';
 import type { VolunteerOpportunity, VolunteerProfile, VolunteerFilters } from '@/types';
 

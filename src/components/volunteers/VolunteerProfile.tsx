@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Edit, Eye, EyeOff, Mail, Phone, MapPin, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
-import { useUpdateVolunteerProfile, useUpdateProfileVisibility } from '@/hooks/useVolunteers';
+import { useUpdateVolunteerProfile, useUpdateProfileVisibility } from '@/hooks/use-volunteers';
 import type { VolunteerProfile, VolunteerRegistrationData } from '@/types';
 
 // Validation schema

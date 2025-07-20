@@ -22,8 +22,25 @@ const VolunteerOpportunities = () => {
   return (
     <Layout>
       <div className="egsport-container py-12">
-        <h1 className="text-3xl font-bold mb-4">Volunteer Opportunities</h1>
-        <p>If you see this, your page is rendering correctly.</p>
+        <div className="text-center mb-8">
+          <h1 className="egsport-heading mb-4">Volunteer Opportunities</h1>
+          <p className="egsport-body text-xl">
+            Find meaningful ways to contribute to your local sports community
+          </p>
+        </div>
+        
+        <div className="max-w-4xl mx-auto">
+          <div className="egsport-card text-center py-12">
+            <h2 className="egsport-subheading mb-4">Coming Soon</h2>
+            <p className="egsport-body mb-6">
+              We're working on bringing you exciting volunteer opportunities with local sports clubs. 
+              Check back soon to discover ways you can make a difference in your community.
+            </p>
+            <p className="egsport-caption">
+              In the meantime, explore our sports clubs directory to connect with organizations directly.
+            </p>
+          </div>
+        </div>
       </div>
     </Layout>
   );

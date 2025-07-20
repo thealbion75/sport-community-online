@@ -9,6 +9,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { SportsCouncilMeetings } from '../SportsCouncilMeetings';
 import type { SportsCouncilMeeting } from '@/types';
+import { usePublicMeetings } from '@/hooks/use-sports-council';
 
 // Mock the hooks
 vi.mock('@/hooks/use-sports-council', () => ({
@@ -68,12 +69,11 @@ describe('SportsCouncilMeetings', () => {
   });
 
   it('renders the sports council meetings page', async () => {
-    const { usePublicMeetings } = await import('@/hooks/use-sports-council');
     vi.mocked(usePublicMeetings).mockReturnValue({
       data: mockMeetings,
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof usePublicMeetings>);
 
     renderWithProviders(<SportsCouncilMeetings />);
 
@@ -82,12 +82,11 @@ describe('SportsCouncilMeetings', () => {
   });
 
   it('displays upcoming and past meetings in separate tabs', async () => {
-    const { usePublicMeetings } = await import('@/hooks/use-sports-council');
     vi.mocked(usePublicMeetings).mockReturnValue({
       data: mockMeetings,
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof usePublicMeetings>);
 
     renderWithProviders(<SportsCouncilMeetings />);
 
@@ -98,12 +97,11 @@ describe('SportsCouncilMeetings', () => {
   });
 
   it('shows loading state when data is being fetched', async () => {
-    const { usePublicMeetings } = await import('@/hooks/use-sports-council');
     vi.mocked(usePublicMeetings).mockReturnValue({
       data: [],
       isLoading: true,
       error: null,
-    } as any);
+    } as unknown as ReturnType<typeof usePublicMeetings>);
 
     renderWithProviders(<SportsCouncilMeetings />);
 
@@ -112,12 +110,11 @@ describe('SportsCouncilMeetings', () => {
   });
 
   it('displays error message when data fetching fails', async () => {
-    const { usePublicMeetings } = await import('@/hooks/use-sports-council');
     vi.mocked(usePublicMeetings).mockReturnValue({
       data: [],
       isLoading: false,
       error: new Error('Failed to fetch meetings'),
-    } as any);
+    } as ReturnType<typeof usePublicMeetings>);
 
     renderWithProviders(<SportsCouncilMeetings />);
 
@@ -127,12 +124,11 @@ describe('SportsCouncilMeetings', () => {
   });
 
   it('displays meeting information correctly', async () => {
-    const { usePublicMeetings } = await import('@/hooks/use-sports-council');
     vi.mocked(usePublicMeetings).mockReturnValue({
       data: mockMeetings,
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof usePublicMeetings>);
 
     renderWithProviders(<SportsCouncilMeetings />);
 
@@ -144,12 +140,11 @@ describe('SportsCouncilMeetings', () => {
   });
 
   it('shows empty state when no meetings are available', async () => {
-    const { usePublicMeetings } = await import('@/hooks/use-sports-council');
     vi.mocked(usePublicMeetings).mockReturnValue({
       data: [],
       isLoading: false,
       error: null,
-    } as any);
+    } as ReturnType<typeof usePublicMeetings>);
 
     renderWithProviders(<SportsCouncilMeetings />);
 

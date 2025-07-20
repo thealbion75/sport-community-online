@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Save, X, Info } from 'lucide-react';
-import { useUpdateVolunteerProfile } from '@/hooks/useVolunteers';
+import { useUpdateVolunteerProfile } from '@/hooks/use-volunteers';
 import { useAuthContext } from '@/contexts/AuthContext';
 import type { VolunteerProfile, VolunteerRegistrationData } from '@/types';
 

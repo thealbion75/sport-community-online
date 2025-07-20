@@ -9,6 +9,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { SportsCouncilAdmin } from '../SportsCouncilAdmin';
 import type { SportsCouncilMeeting, SportsCouncilStats } from '@/types';
+import { useAllMeetings, useCreateMeeting, useUpdateMeeting, useDeleteMeeting, useSportsCouncilStats } from '@/hooks/use-sports-council';
 
 // Mock the hooks
 vi.mock('@/hooks/use-sports-council', () => ({
@@ -66,30 +67,29 @@ describe('SportsCouncilAdmin', () => {
   });
 
   it('renders the sports council admin interface', async () => {
-    const { useAllMeetings, useSportsCouncilStats, useCreateMeeting, useUpdateMeeting, useDeleteMeeting } = await import('@/hooks/use-sports-council');
-    
     vi.mocked(useAllMeetings).mockReturnValue({
       data: mockMeetings,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useAllMeetings>);
     
     vi.mocked(useSportsCouncilStats).mockReturnValue({
       data: mockStats,
-    } as any);
+      isLoading: false,
+    } as ReturnType<typeof useSportsCouncilStats>);
 
     vi.mocked(useCreateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useCreateMeeting>);
 
     vi.mocked(useUpdateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateMeeting>);
 
     vi.mocked(useDeleteMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof useDeleteMeeting>);
 
     renderWithProviders(<SportsCouncilAdmin />);
 
@@ -98,30 +98,29 @@ describe('SportsCouncilAdmin', () => {
   });
 
   it('displays statistics correctly', async () => {
-    const { useAllMeetings, useSportsCouncilStats, useCreateMeeting, useUpdateMeeting, useDeleteMeeting } = await import('@/hooks/use-sports-council');
-    
     vi.mocked(useAllMeetings).mockReturnValue({
       data: mockMeetings,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useAllMeetings>);
     
     vi.mocked(useSportsCouncilStats).mockReturnValue({
       data: mockStats,
-    } as any);
+      isLoading: false,
+    } as ReturnType<typeof useSportsCouncilStats>);
 
     vi.mocked(useCreateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useCreateMeeting>);
 
     vi.mocked(useUpdateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateMeeting>);
 
     vi.mocked(useDeleteMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof useDeleteMeeting>);
 
     renderWithProviders(<SportsCouncilAdmin />);
 
@@ -137,30 +136,29 @@ describe('SportsCouncilAdmin', () => {
   });
 
   it('shows create meeting button', async () => {
-    const { useAllMeetings, useSportsCouncilStats, useCreateMeeting, useUpdateMeeting, useDeleteMeeting } = await import('@/hooks/use-sports-council');
-    
     vi.mocked(useAllMeetings).mockReturnValue({
       data: mockMeetings,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useAllMeetings>);
     
     vi.mocked(useSportsCouncilStats).mockReturnValue({
       data: mockStats,
-    } as any);
+      isLoading: false,
+    } as ReturnType<typeof useSportsCouncilStats>);
 
     vi.mocked(useCreateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useCreateMeeting>);
 
     vi.mocked(useUpdateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateMeeting>);
 
     vi.mocked(useDeleteMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof useDeleteMeeting>);
 
     renderWithProviders(<SportsCouncilAdmin />);
 
@@ -168,30 +166,29 @@ describe('SportsCouncilAdmin', () => {
   });
 
   it('displays meetings in the meetings tab', async () => {
-    const { useAllMeetings, useSportsCouncilStats, useCreateMeeting, useUpdateMeeting, useDeleteMeeting } = await import('@/hooks/use-sports-council');
-    
     vi.mocked(useAllMeetings).mockReturnValue({
       data: mockMeetings,
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useAllMeetings>);
     
     vi.mocked(useSportsCouncilStats).mockReturnValue({
       data: mockStats,
-    } as any);
+      isLoading: false,
+    } as ReturnType<typeof useSportsCouncilStats>);
 
     vi.mocked(useCreateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useCreateMeeting>);
 
     vi.mocked(useUpdateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateMeeting>);
 
     vi.mocked(useDeleteMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof useDeleteMeeting>);
 
     renderWithProviders(<SportsCouncilAdmin />);
 
@@ -205,30 +202,29 @@ describe('SportsCouncilAdmin', () => {
   });
 
   it('shows loading state when data is being fetched', async () => {
-    const { useAllMeetings, useSportsCouncilStats, useCreateMeeting, useUpdateMeeting, useDeleteMeeting } = await import('@/hooks/use-sports-council');
-    
     vi.mocked(useAllMeetings).mockReturnValue({
       data: [],
       isLoading: true,
-    } as any);
+    } as ReturnType<typeof useAllMeetings>);
     
     vi.mocked(useSportsCouncilStats).mockReturnValue({
       data: undefined,
-    } as any);
+      isLoading: true,
+    } as ReturnType<typeof useSportsCouncilStats>);
 
     vi.mocked(useCreateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useCreateMeeting>);
 
     vi.mocked(useUpdateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateMeeting>);
 
     vi.mocked(useDeleteMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof useDeleteMeeting>);
 
     renderWithProviders(<SportsCouncilAdmin />);
 
@@ -236,30 +232,29 @@ describe('SportsCouncilAdmin', () => {
   });
 
   it('shows empty state when no meetings exist', async () => {
-    const { useAllMeetings, useSportsCouncilStats, useCreateMeeting, useUpdateMeeting, useDeleteMeeting } = await import('@/hooks/use-sports-council');
-    
     vi.mocked(useAllMeetings).mockReturnValue({
       data: [],
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useAllMeetings>);
     
     vi.mocked(useSportsCouncilStats).mockReturnValue({
       data: mockStats,
-    } as any);
+      isLoading: false,
+    } as ReturnType<typeof useSportsCouncilStats>);
 
     vi.mocked(useCreateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useCreateMeeting>);
 
     vi.mocked(useUpdateMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateMeeting>);
 
     vi.mocked(useDeleteMeeting).mockReturnValue({
       mutateAsync: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof useDeleteMeeting>);
 
     renderWithProviders(<SportsCouncilAdmin />);
 

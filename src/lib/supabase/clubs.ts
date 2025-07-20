@@ -198,3 +198,23 @@ export async function searchClubs(searchTerm: string, limit: number = 10): Promi
     return { success: false, error: appError.message };
   }
 }
+/**
+ * Get only verified clubs
+ */
+export async function getVerifiedClubs(): Promise<ApiResponse<Club[]>> {
+  return await getClubs({ verified: true });
+}
+
+/**
+ * Get only unverified clubs
+ */
+export async function getUnverifiedClubs(): Promise<ApiResponse<Club[]>> {
+  return await getClubs({ verified: false });
+}
+
+/**
+ * Register a new club (public)
+ */
+export async function registerClub(data: ClubRegistrationData): Promise<ApiResponse<Club>> {
+  return await createClub(data);
+}

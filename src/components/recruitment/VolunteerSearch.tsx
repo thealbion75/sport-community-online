@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Filter, Users, MapPin, SlidersHorizontal, UserPlus } from 'lucide-react';
-import { useSearchVolunteers } from '@/hooks/useVolunteers';
+import { useSearchVolunteers } from '@/hooks/use-volunteers';
 import { VolunteerCard } from './VolunteerCard';
 import { VolunteerFilters } from './VolunteerFilters';
 import { Pagination } from '@/components/ui/pagination';

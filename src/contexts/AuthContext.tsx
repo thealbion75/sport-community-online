@@ -8,7 +8,7 @@ type AuthContextType = {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  signUp: (email: string, password: string, metadata?: { [key: string]: any }) => Promise<void>;
+  signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signUp = async (email: string, password: string, metadata?: { [key: string]: any }) => {
+  const signUp = async (email: string, password: string, metadata?: Record<string, unknown>) => {
     try {
       // Clean up existing state
       cleanupAuthState();
@@ -108,14 +108,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: 'Your account has been created and is pending approval.',
       });
       
-    } catch (error: any) {
-      console.error('Error signing up:', error);
+    } catch (error) {
+      const err = error as Error;
+      console.error('Error signing up:', err);
       toast({
         variant: 'destructive',
         title: 'Registration failed',
-        description: error.message || 'There was a problem with your registration.',
+        description: err.message || 'There was a problem with your registration.',
       });
-      throw error;
+      throw err;
     }
   };
 
@@ -147,14 +148,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Redirect to profile page after successful sign in
       navigate('/profile');
       
-    } catch (error: any) {
-      console.error('Error signing in:', error);
+    } catch (error) {
+      const err = error as Error;
+      console.error('Error signing in:', err);
       toast({
         variant: 'destructive',
         title: 'Sign in failed',
-        description: error.message || 'Invalid email or password.',
+        description: err.message || 'Invalid email or password.',
       });
-      throw error;
+      throw err;
     }
   };
 
@@ -175,12 +177,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Redirect to home page
       navigate('/');
       
-    } catch (error: any) {
-      console.error('Error signing out:', error);
+    } catch (error) {
+      const err = error as Error;
+      console.error('Error signing out:', err);
       toast({
         variant: 'destructive',
         title: 'Sign out failed',
-        description: error.message || 'There was a problem signing out.',
+        description: err.message || 'There was a problem signing out.',
       });
     }
   };
@@ -198,14 +201,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: 'Check your email for the password reset link.',
       });
       
-    } catch (error: any) {
-      console.error('Error resetting password:', error);
+    } catch (error) {
+      const err = error as Error;
+      console.error('Error resetting password:', err);
       toast({
         variant: 'destructive',
         title: 'Password reset failed',
-        description: error.message || 'There was a problem sending the password reset email.',
+        description: err.message || 'There was a problem sending the password reset email.',
       });
-      throw error;
+      throw err;
     }
   };
 
@@ -229,3 +233,6 @@ export function useAuth() {
   }
   return context;
 }
+
+// 👇 Add this line to fix the import errors
+export const useAuthContext = useAuth;
