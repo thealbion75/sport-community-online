@@ -112,15 +112,25 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 <AuthenticatedNav />
               ) : (
                 <div className="flex items-center space-x-2">
-                  <Link to="/login">
-                    <Button variant="ghost" size="sm" className="text-gray-700 hover:text-primary hover:bg-primary/10">
-                      Sign In
-                    </Button>
+                  <Link 
+                    to="/login"
+                    className={`egsport-nav-link ${
+                      location.pathname === '/login' 
+                        ? 'egsport-nav-link-active' 
+                        : 'egsport-nav-link-inactive'
+                    }`}
+                  >
+                    Sign In
                   </Link>
-                  <Link to="/register">
-                    <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                      Register Club
-                    </Button>
+                  <Link 
+                    to="/register"
+                    className={`egsport-nav-link ${
+                      location.pathname === '/register' 
+                        ? 'egsport-nav-link-active' 
+                        : 'egsport-nav-link-inactive'
+                    }`}
+                  >
+                    Register Club
                   </Link>
                 </div>
               )}
