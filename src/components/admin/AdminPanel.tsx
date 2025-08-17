@@ -26,21 +26,29 @@ import { useVerifiedClubs, useUnverifiedClubs } from '@/hooks/use-clubs';
 import { useSearchVolunteers } from '@/hooks/use-volunteers';
 import { useOpportunities } from '@/hooks/use-opportunities';
 import { usePlatformStats } from '@/hooks/use-admin';
+import { useClubApplicationStats } from '@/hooks/use-club-approval';
 import { ClubVerificationManager } from './ClubVerificationManager';
 import { UserManagement } from './UserManagement';
 import { ContentModeration } from './ContentModeration';
 import { PlatformAnalytics } from './PlatformAnalytics';
+import { ClubApprovalDashboard } from './ClubApprovalDashboard';
+import { ClubApplicationList } from './ClubApplicationList';
+import { ClubApplicationReview } from './ClubApplicationReview';
 import type { PlatformStats } from '@/types';
 
 export const AdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [clubApprovalView, setClubApprovalView] = useState<'dashboard' | 'list' | 'detail'>('dashboard');
+  const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
 
   // Fetch data for overview
   const { data: verifiedClubs = [] } = useVerifiedClubs();
   const { data: unverifiedClubs = [] } = useUnverifiedClubs();
   const { data: stats } = usePlatformStats();
+  const { data: clubApprovalStats } = useClubApplicationStats();
 
   const pendingVerifications = unverifiedClubs.length;
+  const pendingApprovals = clubApprovalStats?.pending || 0;
 
   // Provide default stats if not loaded yet
   const platformStats = stats || {
@@ -143,7 +151,7 @@ export const AdminPanel: React.FC = () => {
       </div>
 
       {/* Alert for pending actions */}
-      {pendingVerifications > 0 && (
+      {(pendingVerifications > 0 || pendingApprovals > 0) && (
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -152,17 +160,36 @@ export const AdminPanel: React.FC = () => {
                 <h4 className="font-medium text-orange-800">
                   Action Required
                 </h4>
-                <p className="text-sm text-orange-700">
-                  {pendingVerifications} club{pendingVerifications !== 1 ? 's' : ''} pending verification
-                </p>
+                <div className="text-sm text-orange-700 space-y-1">
+                  {pendingApprovals > 0 && (
+                    <p>{pendingApprovals} club application{pendingApprovals !== 1 ? 's' : ''} awaiting approval</p>
+                  )}
+                  {pendingVerifications > 0 && (
+                    <p>{pendingVerifications} club{pendingVerifications !== 1 ? 's' : ''} pending verification</p>
+                  )}
+                </div>
               </div>
-              <Button 
-                size="sm" 
-                onClick={() => setActiveTab('clubs')}
-                className="bg-orange-600 hover:bg-orange-700"
-              >
-                Review Now
-              </Button>
+              <div className="flex gap-2">
+                {pendingApprovals > 0 && (
+                  <Button 
+                    size="sm" 
+                    onClick={() => setActiveTab('club-approvals')}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    Review Approvals
+                  </Button>
+                )}
+                {pendingVerifications > 0 && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setActiveTab('clubs')}
+                    className="border-orange-600 text-orange-600 hover:bg-orange-600 hover:text-white"
+                  >
+                    Review Verifications
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -170,8 +197,16 @@ export const AdminPanel: React.FC = () => {
 
       {/* Main Admin Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="club-approvals">
+            Club Approvals
+            {pendingApprovals > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {pendingApprovals}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="clubs">
             Clubs
             {pendingVerifications > 0 && (
@@ -184,6 +219,60 @@ export const AdminPanel: React.FC = () => {
           <TabsTrigger value="moderation">Moderation</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="club-approvals" className="space-y-6">
+          {clubApprovalView === 'dashboard' && (
+            <ClubApprovalDashboard 
+              onNavigateToApplications={() => setClubApprovalView('list')}
+              onNavigateToApplication={(clubId) => {
+                setSelectedClubId(clubId);
+                setClubApprovalView('detail');
+              }}
+            />
+          )}
+          {clubApprovalView === 'list' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setClubApprovalView('dashboard')}
+                >
+                  ← Back to Dashboard
+                </Button>
+                <h2 className="text-xl font-semibold">Club Applications</h2>
+              </div>
+              <ClubApplicationList 
+                onApplicationSelect={(clubId) => {
+                  setSelectedClubId(clubId);
+                  setClubApprovalView('detail');
+                }}
+              />
+            </div>
+          )}
+          {clubApprovalView === 'detail' && selectedClubId && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setClubApprovalView('list')}
+                >
+                  ← Back to Applications
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setClubApprovalView('dashboard')}
+                >
+                  Dashboard
+                </Button>
+                <h2 className="text-xl font-semibold">Application Review</h2>
+              </div>
+              <ClubApplicationReview 
+                clubId={selectedClubId}
+                onBack={() => setClubApprovalView('list')}
+              />
+            </div>
+          )}
+        </TabsContent>
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -239,6 +328,19 @@ export const AdminPanel: React.FC = () => {
               <CardContent>
                 <div className="space-y-3">
                   <Button 
+                    className="w-full justify-start" 
+                    onClick={() => setActiveTab('club-approvals')}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Review Club Approvals
+                    {pendingApprovals > 0 && (
+                      <Badge variant="destructive" className="ml-auto">
+                        {pendingApprovals}
+                      </Badge>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline"
                     className="w-full justify-start" 
                     onClick={() => setActiveTab('clubs')}
                   >

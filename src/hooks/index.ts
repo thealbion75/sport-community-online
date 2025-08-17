@@ -10,6 +10,7 @@ export * from './use-opportunities';
 export * from './use-applications';
 export * from './use-messages';
 export * from './use-auth';
+export * from './use-club-approval';
 
 // Utility hooks
 export * from './use-toast';

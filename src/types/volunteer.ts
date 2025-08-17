@@ -18,6 +18,10 @@ export interface Club {
   website_url?: string;
   sport_types: string[];
   verified: boolean;
+  application_status: 'pending' | 'approved' | 'rejected';
+  admin_notes?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -230,4 +234,56 @@ export interface PlatformStats {
   total_opportunities: number;
   total_applications: number;
   active_users: number;
+}
+
+/**
+ * Club Application History Interface
+ * Represents the history of approval/rejection decisions for a club
+ */
+export interface ClubApplicationHistory {
+  id: string;
+  club_id: string;
+  admin_id: string;
+  action: 'approved' | 'rejected' | 'pending';
+  notes?: string;
+  created_at: string;
+  admin_email?: string;
+  admin_name?: string;
+}
+
+/**
+ * Club Application Review Interface
+ * Extended club data with history for admin review
+ */
+export interface ClubApplicationReview {
+  club: Club;
+  history: ClubApplicationHistory[];
+  admin_user?: {
+    email: string;
+    name?: string;
+  };
+}
+
+/**
+ * Approval Action Data Interface
+ * Data structure for approval/rejection actions
+ */
+export interface ApprovalActionData {
+  club_id: string;
+  action: 'approve' | 'reject';
+  admin_notes?: string;
+  send_notification?: boolean;
+}
+
+/**
+ * Club Application Filters Interface
+ * Filters for club application queries
+ */
+export interface ClubApplicationFilters {
+  status?: 'pending' | 'approved' | 'rejected' | 'all';
+  search?: string;
+  date_from?: string;
+  date_to?: string;
+  limit?: number;
+  offset?: number;
 }

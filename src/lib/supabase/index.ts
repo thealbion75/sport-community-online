@@ -21,5 +21,8 @@ export * from './messages';
 // Export all auth functions
 export * from './auth';
 
+// Export all admin club approval functions
+export * from './admin-club-approval';
+
 // Re-export the supabase client
 export { supabase } from '@/integrations/supabase/client';

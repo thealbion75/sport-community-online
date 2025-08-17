@@ -8,3 +8,8 @@ export { ClubVerificationManager } from './ClubVerificationManager';
 export { UserManagement } from './UserManagement';
 export { ContentModeration } from './ContentModeration';
 export { PlatformAnalytics } from './PlatformAnalytics';
+export { ClubApplicationList } from './ClubApplicationList';
+export { ClubApplicationListDemo } from './ClubApplicationListDemo';
+export { ClubApplicationReview } from './ClubApplicationReview';
+export { ClubApplicationReviewDemo } from './ClubApplicationReviewDemo';
+export { ClubApprovalDashboard } from './ClubApprovalDashboard';
