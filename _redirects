@@ -1,0 +1,6 @@
+# Cloudflare Pages redirects
+# API routes should go to the worker
+/api/* https://sport-community-online.your-subdomain.workers.dev/api/:splat 200
+
+# SPA fallback - serve index.html for all non-API routes
+/* /index.html 200

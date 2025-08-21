@@ -20,7 +20,8 @@ database_id = "1f5dd468-817a-47b5-b35a-c699af10bf10"
 ENVIRONMENT = "development"
 
 # Pages Configuration for Frontend
+pages_build_output_dir = "dist"
+
 [build]
-command = "npm run build"
+command = "npm install && npm run build"
 cwd = "."
-destination_dir = "dist"
