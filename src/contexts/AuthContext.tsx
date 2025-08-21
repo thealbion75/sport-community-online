@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { User, Session, d1Auth } from '@/lib/d1-auth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { SessionManager, CSRF } from '@/lib/security';
@@ -31,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = d1Auth.onAuthStateChange(
       (event, newSession) => {
         console.log('Auth state changed:', event);
         setSession(newSession);
@@ -64,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initAuth = async () => {
       try {
         setLoading(true);
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const currentSession = d1Auth.getSession();
         
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -107,15 +106,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clean up existing state
       cleanupAuthState();
       
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: metadata,
-        },
-      });
+      const result = await d1Auth.signUp(email, password, metadata);
 
-      if (error) throw error;
+      if (!result.success) {
+        throw new Error(result.error || 'Registration failed');
+      }
 
       toast({
         title: 'Registration successful',
@@ -139,20 +134,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clean up existing state
       cleanupAuthState();
       
-      // Attempt global sign out first
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-        console.log('Error during global sign out:', err);
+      const result = await d1Auth.signInWithPassword(email, password);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Sign in failed');
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
+      // Update local state
+      if (result.data?.session) {
+        setSession(result.data.session);
+        setUser(result.data.session.user);
+      }
 
       toast({
         title: 'Sign in successful',
@@ -179,14 +171,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clean up auth state
       cleanupAuthState();
       
-      // Attempt global sign out
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-      if (error) throw error;
+      const result = await d1Auth.signOut();
+      
+      // Update local state regardless of API response
+      setSession(null);
+      setUser(null);
 
-      toast({
-        title: 'Signed out',
-        description: 'You have been signed out successfully.',
-      });
+      if (result.success) {
+        toast({
+          title: 'Signed out',
+          description: 'You have been signed out successfully.',
+        });
+      }
 
       // Redirect to home page
       navigate('/');
@@ -204,11 +200,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = async (email: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const result = await d1Auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
-      if (error) throw error;
+      if (!result.success) {
+        throw new Error(result.error || 'Password reset failed');
+      }
 
       toast({
         title: 'Password reset email sent',

@@ -4,7 +4,6 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -29,18 +28,18 @@ export function useIsAdmin() {
       if (!user) return false;
 
       try {
-        // Check if user has admin role in admin_roles table
-        const { data, error } = await supabase
-          .from('admin_roles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single();
+        const response = await fetch('/api/admin/check-role', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('d1_session') ? JSON.parse(localStorage.getItem('d1_session')!).access_token : ''}`,
+          },
+        });
 
-        if (error && error.code !== 'PGRST116') {
-          throw new Error(`Failed to check admin status: ${error.message}`);
+        if (!response.ok) {
+          return false;
         }
 
-        return data?.is_admin || false;
+        const result = await response.json();
+        return result.success && result.data?.is_admin || false;
       } catch (error) {
         console.error('Error checking admin status:', error);
         return false;
@@ -59,38 +58,29 @@ export function usePlatformStats() {
     queryKey: adminKeys.platformStats(),
     queryFn: async () => {
       try {
-        // Get clubs count
-        const { count: totalClubs } = await supabase
-          .from('clubs')
-          .select('*', { count: 'exact', head: true });
+        const response = await fetch('/api/admin/platform-stats', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('d1_session') ? JSON.parse(localStorage.getItem('d1_session')!).access_token : ''}`,
+          },
+        });
 
-        const { count: verifiedClubs } = await supabase
-          .from('clubs')
-          .select('*', { count: 'exact', head: true })
-          .eq('verified', true);
+        if (!response.ok) {
+          throw new Error('Failed to fetch platform statistics');
+        }
 
-        // Get volunteers count
-        const { count: totalVolunteers } = await supabase
-          .from('volunteer_profiles')
-          .select('*', { count: 'exact', head: true });
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to fetch platform statistics');
+        }
 
-        // Get opportunities count
-        const { count: totalOpportunities } = await supabase
-          .from('volunteer_opportunities')
-          .select('*', { count: 'exact', head: true });
-
-        // Get applications count
-        const { count: totalApplications } = await supabase
-          .from('volunteer_applications')
-          .select('*', { count: 'exact', head: true });
-
-        return {
-          total_clubs: totalClubs || 0,
-          verified_clubs: verifiedClubs || 0,
-          total_volunteers: totalVolunteers || 0,
-          total_opportunities: totalOpportunities || 0,
-          total_applications: totalApplications || 0,
-          active_users: 0, // This would require more complex query
+        return result.data || {
+          total_clubs: 0,
+          verified_clubs: 0,
+          total_volunteers: 0,
+          total_opportunities: 0,
+          total_applications: 0,
+          active_users: 0,
         };
       } catch (error) {
         console.error('Error fetching platform stats:', error);
@@ -114,14 +104,22 @@ export function useSuspendUser() {
       // For now, we'll simulate the action
       console.log(`Suspending user ${userId} for reason: ${reason}`);
       
-      // This would typically update a user status table or call an auth service
-      const { error } = await supabase.rpc('suspend_user', {
-        user_id: userId,
-        suspension_reason: reason
+      const response = await fetch('/api/admin/suspend-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('d1_session') ? JSON.parse(localStorage.getItem('d1_session')!).access_token : ''}`,
+        },
+        body: JSON.stringify({ user_id: userId, suspension_reason: reason }),
       });
 
-      if (error) {
-        throw new Error(`Failed to suspend user: ${error.message}`);
+      if (!response.ok) {
+        throw new Error('Failed to suspend user');
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to suspend user');
       }
 
       return { userId, reason };
@@ -165,16 +163,27 @@ export function useModerateContent() {
       // In a real implementation, this would call moderation APIs
       console.log(`Moderating ${contentType} ${contentId}: ${action} - ${reason}`);
       
-      // This would typically update content status or remove content
-      const { error } = await supabase.rpc('moderate_content', {
-        content_id: contentId,
-        content_type: contentType,
-        moderation_action: action,
-        moderation_reason: reason
+      const response = await fetch('/api/admin/moderate-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('d1_session') ? JSON.parse(localStorage.getItem('d1_session')!).access_token : ''}`,
+        },
+        body: JSON.stringify({
+          content_id: contentId,
+          content_type: contentType,
+          moderation_action: action,
+          moderation_reason: reason
+        }),
       });
 
-      if (error) {
-        throw new Error(`Failed to moderate content: ${error.message}`);
+      if (!response.ok) {
+        throw new Error('Failed to moderate content');
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to moderate content');
       }
 
       return { contentId, contentType, action, reason };
@@ -233,21 +242,25 @@ export function useCreateAdminRole() {
 
   return useMutation({
     mutationFn: async ({ userId, email }: { userId: string; email: string }) => {
-      const { data, error } = await supabase
-        .from('admin_roles')
-        .insert([{
-          id: userId,
-          email: email,
-          is_admin: true
-        }])
-        .select()
-        .single();
+      const response = await fetch('/api/admin/create-admin-role', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('d1_session') ? JSON.parse(localStorage.getItem('d1_session')!).access_token : ''}`,
+        },
+        body: JSON.stringify({ user_id: userId, email }),
+      });
 
-      if (error) {
-        throw new Error(`Failed to create admin role: ${error.message}`);
+      if (!response.ok) {
+        throw new Error('Failed to create admin role');
       }
 
-      return data;
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create admin role');
+      }
+
+      return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.all });

@@ -3,7 +3,7 @@
  * Handles API requests and database operations for the sports community platform
  */
 
-import { initializeDB } from './lib/d1/client';
+import { initializeDB, executeQueryFirst } from './lib/d1/client';
 import { 
   getPendingClubApplications,
   getClubApplicationById,
@@ -149,7 +149,18 @@ export default {
       }
 
       if (path === '/api/auth/signin' && method === 'POST') {
-        const { email, password } = await request.json();
+        const rawData = await request.json();
+        const sanitizedData = sanitizeInput(rawData);
+        const { email, password } = sanitizedData;
+        
+        // Basic validation
+        if (!email || !password) {
+          return new Response(JSON.stringify({ success: false, error: 'Email and password required' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
         const result = await signIn(email, password);
         return new Response(JSON.stringify(result), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -180,6 +191,82 @@ export default {
         }
         const result = await getCurrentUser(token);
         return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Admin role check endpoint
+      if (path === '/api/admin/check-role' && method === 'GET') {
+        const token = getAuthToken(request);
+        if (!token) {
+          return new Response(JSON.stringify({ success: false, error: 'Authentication required' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        const userResult = await getCurrentUser(token);
+        if (!userResult.success) {
+          return new Response(JSON.stringify({ success: false, error: 'Invalid token' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        // Check if user is admin
+        const adminCheckQuery = 'SELECT is_admin FROM admin_roles WHERE user_id = ?1';
+        const adminCheck = await executeQueryFirst<{ is_admin: boolean }>(adminCheckQuery, [userResult.data.id]);
+        
+        return new Response(JSON.stringify({ 
+          success: true, 
+          data: { is_admin: adminCheck?.is_admin || false }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Platform stats endpoint
+      if (path === '/api/admin/platform-stats' && method === 'GET') {
+        const token = getAuthToken(request);
+        if (!token) {
+          return new Response(JSON.stringify({ success: false, error: 'Authentication required' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        const userResult = await getCurrentUser(token);
+        if (!userResult.success) {
+          return new Response(JSON.stringify({ success: false, error: 'Invalid token' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        // Get platform statistics
+        const statsQuery = `
+          SELECT 
+            (SELECT COUNT(*) FROM clubs) as total_clubs,
+            (SELECT COUNT(*) FROM clubs WHERE verified = 1) as verified_clubs,
+            (SELECT COUNT(*) FROM volunteer_profiles) as total_volunteers,
+            (SELECT COUNT(*) FROM volunteer_opportunities) as total_opportunities,
+            (SELECT COUNT(*) FROM volunteer_applications) as total_applications,
+            (SELECT COUNT(*) FROM users) as active_users
+        `;
+        
+        const stats = await executeQueryFirst(statsQuery);
+        
+        return new Response(JSON.stringify({ 
+          success: true, 
+          data: stats || {
+            total_clubs: 0,
+            verified_clubs: 0,
+            total_volunteers: 0,
+            total_opportunities: 0,
+            total_applications: 0,
+            active_users: 0
+          }
+        }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }

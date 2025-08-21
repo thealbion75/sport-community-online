@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+// Using D1 API instead of Supabase
 import { useIsAdmin } from './use-admin';
 import { clubApprovalKeys } from './use-club-approval';
 import { useToast } from './use-toast';

@@ -4,15 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  getPendingClubApplications,
-  getClubApplicationById,
-  approveClubApplication,
-  rejectClubApplication,
-  getApplicationHistory,
-  bulkApproveApplications,
-  getClubApplicationStats
-} from '@/lib/supabase/admin-club-approval';
+// All club approval operations now use the secure API client
 import { 
   Club, 
   ClubApplicationReview, 
@@ -39,10 +31,14 @@ export const clubApprovalKeys = {
  * Hook to fetch pending club applications with filtering and caching
  */
 export function usePendingApplications(filters?: ClubApplicationFilters) {
+  const secureApi = useSecureAdminApi();
+  
   return useQuery({
     queryKey: clubApprovalKeys.applicationsList(filters || {}),
-    queryFn: () => getPendingClubApplications(filters),
-    select: (data) => data.success ? data.data : { data: [], count: 0, page: 1, limit: 10, total_pages: 0 },
+    queryFn: async () => {
+      const result = await secureApi.getApplications(filters);
+      return result.success ? result.data : { data: [], count: 0, page: 1, limit: 10, total_pages: 0 };
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
     retry: (failureCount, error) => {
@@ -64,10 +60,14 @@ export function usePendingApplications(filters?: ClubApplicationFilters) {
  * Hook to fetch single club application details
  */
 export function useClubApplication(id: string) {
+  const secureApi = useSecureAdminApi();
+  
   return useQuery({
     queryKey: clubApprovalKeys.applicationDetail(id),
-    queryFn: () => getClubApplicationById(id),
-    select: (data) => data.success ? data.data : null,
+    queryFn: async () => {
+      const result = await secureApi.getApplication(id);
+      return result.success ? result.data : null;
+    },
     enabled: !!id,
     staleTime: 1 * 60 * 1000, // 1 minute
     retry: (failureCount, error) => {
@@ -91,8 +91,18 @@ export function useClubApplication(id: string) {
 export function useApplicationHistory(clubId: string) {
   return useQuery({
     queryKey: clubApprovalKeys.history(clubId),
-    queryFn: () => getApplicationHistory(clubId),
-    select: (data) => data.success ? data.data : [],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/club-applications/${clubId}/history`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('d1_session') ? JSON.parse(localStorage.getItem('d1_session')!).access_token : ''}`,
+        },
+      });
+      
+      if (!response.ok) return [];
+      
+      const result = await response.json();
+      return result.success ? result.data : [];
+    },
     enabled: !!clubId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -104,8 +114,18 @@ export function useApplicationHistory(clubId: string) {
 export function useClubApplicationStats() {
   return useQuery({
     queryKey: clubApprovalKeys.stats(),
-    queryFn: () => getClubApplicationStats(),
-    select: (data) => data.success ? data.data : { pending: 0, approved: 0, rejected: 0, total: 0 },
+    queryFn: async () => {
+      const response = await fetch('/api/admin/club-applications/stats', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('d1_session') ? JSON.parse(localStorage.getItem('d1_session')!).access_token : ''}`,
+        },
+      });
+      
+      if (!response.ok) return { pending: 0, approved: 0, rejected: 0, total: 0 };
+      
+      const result = await response.json();
+      return result.success ? result.data : { pending: 0, approved: 0, rejected: 0, total: 0 };
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

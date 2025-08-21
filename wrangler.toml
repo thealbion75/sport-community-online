@@ -13,7 +13,7 @@ name = "sport-community-online-dev"
 [[d1_databases]]
 binding = "DB"
 database_name = "sport-community-db"
-database_id = "your-database-id-here"
+database_id = "1f5dd468-817a-47b5-b35a-c699af10bf10"
 
 # Environment Variables
 [vars]

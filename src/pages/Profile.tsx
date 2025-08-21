@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+// Using D1 API instead of Supabase
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';

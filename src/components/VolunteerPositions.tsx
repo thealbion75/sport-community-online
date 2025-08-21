@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PlusCircle, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+// Using D1 API instead of Supabase
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
