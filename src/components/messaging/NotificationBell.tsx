@@ -23,6 +23,9 @@ import {
 import { format, formatDistanceToNow } from 'date-fns';
 import { useUnreadMessages, useUnreadMessageCount, useMarkMessageAsRead } from '@/hooks/use-messages';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useIsAdmin } from '@/hooks/use-admin';
+import { useClubApplicationStats } from '@/hooks/use-club-approval';
+import { useAdminNotifications } from '@/hooks/use-admin-notifications';
 import type { Message } from '@/types';
 
 interface Notification {
@@ -51,6 +54,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
   
   const { data: unreadMessages = [] } = useUnreadMessages(user?.id || '');
   const { data: unreadCount = 0 } = useUnreadMessageCount(user?.id || '');
+  const { data: isAdmin = false } = useIsAdmin();
+  const { data: clubApprovalStats } = useClubApplicationStats();
+  const { notifications: adminNotifications, removeNotification } = useAdminNotifications();
   const markAsReadMutation = useMarkMessageAsRead();
 
   // Convert messages to notifications
@@ -65,9 +71,41 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
     data: message
   }));
 
+  // Convert admin notifications to notification format
+  const adminNotificationsList: Notification[] = [];
+  
+  if (isAdmin) {
+    // Add real-time admin notifications
+    adminNotifications.forEach(adminNotif => {
+      adminNotificationsList.push({
+        id: adminNotif.id,
+        type: 'application' as const,
+        title: adminNotif.title,
+        description: adminNotif.message,
+        timestamp: adminNotif.timestamp,
+        read: false,
+        actionUrl: adminNotif.type === 'club_application' ? '/admin#club-approvals' : '/admin'
+      });
+    });
+    
+    // Add pending applications notification if there are any
+    if (clubApprovalStats?.pending > 0) {
+      adminNotificationsList.push({
+        id: 'club-approvals-pending',
+        type: 'application' as const,
+        title: 'Club Applications Pending',
+        description: `${clubApprovalStats.pending} club application${clubApprovalStats.pending !== 1 ? 's' : ''} awaiting your review`,
+        timestamp: new Date().toISOString(),
+        read: false,
+        actionUrl: '/admin#club-approvals'
+      });
+    }
+  }
+
   // Sample system notifications (in a real app, these would come from an API)
   const systemNotifications: Notification[] = [
-    // These would be populated from actual system events
+    ...adminNotificationsList
+    // Other system events would be added here
   ];
 
   const allNotifications = [...messageNotifications, ...systemNotifications]
@@ -80,6 +118,11 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
     // Mark message as read if it's a message notification
     if (notification.type === 'message' && notification.data) {
       markAsReadMutation.mutate(notification.id);
+    }
+
+    // Remove admin notification if it's a real-time admin notification
+    if (notification.type === 'application' && adminNotifications.some(n => n.id === notification.id)) {
+      removeNotification(notification.id);
     }
 
     onNotificationClick?.(notification);

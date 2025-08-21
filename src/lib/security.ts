@@ -6,6 +6,81 @@
 import DOMPurify from 'isomorphic-dompurify';
 
 /**
+ * Session Management Utilities
+ */
+export const SessionManager = {
+  /**
+   * Session timeout in milliseconds (30 minutes)
+   */
+  SESSION_TIMEOUT: 30 * 60 * 1000,
+
+  /**
+   * Check if session is expired
+   */
+  isSessionExpired(lastActivity: number): boolean {
+    return Date.now() - lastActivity > this.SESSION_TIMEOUT;
+  },
+
+  /**
+   * Update last activity timestamp
+   */
+  updateActivity(): void {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('last_activity', Date.now().toString());
+    }
+  },
+
+  /**
+   * Get last activity timestamp
+   */
+  getLastActivity(): number {
+    if (typeof sessionStorage !== 'undefined') {
+      const lastActivity = sessionStorage.getItem('last_activity');
+      return lastActivity ? parseInt(lastActivity, 10) : Date.now();
+    }
+    return Date.now();
+  },
+
+  /**
+   * Clear session data
+   */
+  clearSession(): void {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem('last_activity');
+      sessionStorage.removeItem('csrf_token');
+    }
+    if (typeof localStorage !== 'undefined') {
+      // Clear any auth-related localStorage items
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+  },
+
+  /**
+   * Initialize session monitoring
+   */
+  initializeSessionMonitoring(onSessionExpired: () => void): void {
+    // Check session every minute
+    setInterval(() => {
+      const lastActivity = this.getLastActivity();
+      if (this.isSessionExpired(lastActivity)) {
+        this.clearSession();
+        onSessionExpired();
+      }
+    }, 60000);
+
+    // Update activity on user interactions
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    events.forEach(event => {
+      document.addEventListener(event, () => this.updateActivity(), { passive: true });
+    });
+  }
+};
+
+/**
  * Input sanitization utilities
  */
 export const InputSanitizer = {
@@ -24,7 +99,7 @@ export const InputSanitizer = {
    */
   sanitizeText(input: string): string {
     return input
-      .replace(/[<>]/g, '') // Remove angle brackets
+      .replace(/<[^>]*>/g, '') // Remove all HTML tags
       .replace(/javascript:/gi, '') // Remove javascript: protocol
       .replace(/on\w+=/gi, '') // Remove event handlers
       .trim();
@@ -34,10 +109,14 @@ export const InputSanitizer = {
    * Sanitize email input
    */
   sanitizeEmail(email: string): string {
-    return email
+    const sanitized = email
       .toLowerCase()
       .replace(/[^\w@.-]/g, '') // Only allow word chars, @, ., -
       .trim();
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(sanitized) ? sanitized : '';
   },
 
   /**
@@ -127,11 +206,17 @@ export const CSP = {
  */
 export class RateLimiter {
   private requests: Map<string, number[]> = new Map();
+  private blockedIps: Set<string> = new Set();
 
   /**
    * Check if request is allowed based on rate limit
    */
   isAllowed(key: string, maxRequests: number, windowMs: number): boolean {
+    // Check if IP is blocked
+    if (this.blockedIps.has(key)) {
+      return false;
+    }
+
     const now = Date.now();
     const windowStart = now - windowMs;
     
@@ -143,6 +228,10 @@ export class RateLimiter {
     
     // Check if under limit
     if (recentRequests.length >= maxRequests) {
+      // Block IP if they exceed limit multiple times
+      if (recentRequests.length >= maxRequests * 2) {
+        this.blockIp(key, 15 * 60 * 1000); // Block for 15 minutes
+      }
       return false;
     }
     
@@ -151,6 +240,47 @@ export class RateLimiter {
     this.requests.set(key, recentRequests);
     
     return true;
+  }
+
+  /**
+   * Block an IP address temporarily
+   */
+  blockIp(ip: string, durationMs: number): void {
+    this.blockedIps.add(ip);
+    setTimeout(() => {
+      this.blockedIps.delete(ip);
+    }, durationMs);
+  }
+
+  /**
+   * Check if IP is blocked
+   */
+  isBlocked(ip: string): boolean {
+    return this.blockedIps.has(ip);
+  }
+
+  /**
+   * Get rate limit info for a key
+   */
+  getRateLimitInfo(key: string, maxRequests: number, windowMs: number): {
+    remaining: number;
+    resetTime: number;
+    blocked: boolean;
+  } {
+    if (this.blockedIps.has(key)) {
+      return { remaining: 0, resetTime: Date.now() + windowMs, blocked: true };
+    }
+
+    const now = Date.now();
+    const windowStart = now - windowMs;
+    const requests = this.requests.get(key) || [];
+    const recentRequests = requests.filter(time => time > windowStart);
+    
+    return {
+      remaining: Math.max(0, maxRequests - recentRequests.length),
+      resetTime: recentRequests.length > 0 ? recentRequests[0] + windowMs : now + windowMs,
+      blocked: false
+    };
   }
 
   /**
@@ -186,11 +316,15 @@ export const CSRF = {
   },
 
   /**
-   * Store CSRF token in session storage
+   * Store CSRF token in session storage with timestamp
    */
   storeToken(token: string): void {
     if (typeof sessionStorage !== 'undefined') {
-      sessionStorage.setItem('csrf_token', token);
+      const tokenData = {
+        token,
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem('csrf_token', JSON.stringify(tokenData));
     }
   },
 
@@ -199,7 +333,22 @@ export const CSRF = {
    */
   getToken(): string | null {
     if (typeof sessionStorage !== 'undefined') {
-      return sessionStorage.getItem('csrf_token');
+      const tokenDataStr = sessionStorage.getItem('csrf_token');
+      if (tokenDataStr) {
+        try {
+          const tokenData = JSON.parse(tokenDataStr);
+          // Check if token is not older than 1 hour
+          if (Date.now() - tokenData.timestamp < 60 * 60 * 1000) {
+            return tokenData.token;
+          } else {
+            // Token expired, remove it
+            sessionStorage.removeItem('csrf_token');
+          }
+        } catch {
+          // Invalid token data, remove it
+          sessionStorage.removeItem('csrf_token');
+        }
+      }
     }
     return null;
   },
@@ -210,6 +359,37 @@ export const CSRF = {
   validateToken(token: string): boolean {
     const storedToken = this.getToken();
     return storedToken !== null && storedToken === token;
+  },
+
+  /**
+   * Add CSRF token to request headers
+   */
+  addToHeaders(headers: Record<string, string> = {}): Record<string, string> {
+    const token = this.getToken();
+    if (token) {
+      headers['X-CSRF-Token'] = token;
+    }
+    return headers;
+  },
+
+  /**
+   * Add CSRF token to form data
+   */
+  addToFormData(formData: FormData): FormData {
+    const token = this.getToken();
+    if (token) {
+      formData.append('csrf_token', token);
+    }
+    return formData;
+  },
+
+  /**
+   * Refresh CSRF token
+   */
+  refreshToken(): string {
+    const newToken = this.generateToken();
+    this.storeToken(newToken);
+    return newToken;
   }
 };
 
@@ -374,9 +554,244 @@ export const SecureStorage = {
 };
 
 /**
+ * Email Template Security
+ */
+export const EmailTemplateSecurity = {
+  /**
+   * Sanitize email template content to prevent injection
+   */
+  sanitizeTemplate(template: string, variables: Record<string, string>): string {
+    // First sanitize the template itself
+    let sanitizedTemplate = DOMPurify.sanitize(template, {
+      ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a'],
+      ALLOWED_ATTR: ['href'],
+      ALLOWED_URI_REGEXP: /^https?:\/\//
+    });
+
+    // Sanitize all variables before substitution
+    const sanitizedVariables: Record<string, string> = {};
+    for (const [key, value] of Object.entries(variables)) {
+      sanitizedVariables[key] = InputSanitizer.sanitizeText(value);
+    }
+
+    // Replace variables in template
+    for (const [key, value] of Object.entries(sanitizedVariables)) {
+      const placeholder = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+      sanitizedTemplate = sanitizedTemplate.replace(placeholder, value);
+    }
+
+    return sanitizedTemplate;
+  },
+
+  /**
+   * Validate email template for security issues
+   */
+  validateTemplate(template: string): { isValid: boolean; issues: string[] } {
+    const issues: string[] = [];
+
+    // Check for script tags
+    if (/<script/i.test(template)) {
+      issues.push('Script tags are not allowed in email templates');
+    }
+
+    // Check for javascript: URLs
+    if (/javascript:/i.test(template)) {
+      issues.push('JavaScript URLs are not allowed in email templates');
+    }
+
+    // Check for data: URLs
+    if (/data:/i.test(template)) {
+      issues.push('Data URLs are not allowed in email templates');
+    }
+
+    // Check for form elements
+    if (/<form|<input|<textarea|<select/i.test(template)) {
+      issues.push('Form elements are not allowed in email templates');
+    }
+
+    // Check for external resource loading
+    if (/<link|<style|@import/i.test(template)) {
+      issues.push('External stylesheets are not allowed in email templates');
+    }
+
+    return {
+      isValid: issues.length === 0,
+      issues
+    };
+  }
+};
+
+/**
+ * Admin Action Security
+ */
+export const AdminActionSecurity = {
+  /**
+   * Rate limiter for admin actions
+   */
+  adminRateLimiter: new RateLimiter(),
+
+  /**
+   * Check if admin action is allowed
+   */
+  isAdminActionAllowed(adminId: string, action: string): boolean {
+    const key = `admin_${adminId}_${action}`;
+    
+    // Different limits for different actions
+    const limits = {
+      approve: { max: 50, window: 60 * 1000 }, // 50 approvals per minute
+      reject: { max: 30, window: 60 * 1000 },  // 30 rejections per minute
+      bulk_approve: { max: 5, window: 60 * 1000 }, // 5 bulk operations per minute
+      view: { max: 200, window: 60 * 1000 } // 200 views per minute
+    };
+
+    const limit = limits[action as keyof typeof limits] || limits.view;
+    return this.adminRateLimiter.isAllowed(key, limit.max, limit.window);
+  },
+
+  /**
+   * Log admin action for audit trail
+   */
+  logAdminAction(adminId: string, action: string, details: Record<string, any>): void {
+    const logEntry = {
+      adminId,
+      action,
+      details: InputSanitizer.sanitizeText(JSON.stringify(details)),
+      timestamp: new Date().toISOString(),
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
+      ip: 'client-side' // This would be filled server-side
+    };
+
+    // Store in session storage for now (in production, send to server)
+    if (typeof sessionStorage !== 'undefined') {
+      const existingLogs = sessionStorage.getItem('admin_action_logs');
+      let logs: any[] = [];
+      
+      try {
+        logs = existingLogs ? JSON.parse(existingLogs) : [];
+        // Ensure logs is an array
+        if (!Array.isArray(logs)) {
+          logs = [];
+        }
+      } catch {
+        logs = [];
+      }
+      
+      logs.push(logEntry);
+      
+      // Keep only last 100 logs
+      if (logs.length > 100) {
+        logs.splice(0, logs.length - 100);
+      }
+      
+      sessionStorage.setItem('admin_action_logs', JSON.stringify(logs));
+    }
+  },
+
+  /**
+   * Validate admin permissions before action
+   */
+  validateAdminPermissions(adminId: string, requiredRole: string): boolean {
+    // This would typically check against a server-side permission system
+    // For now, we'll do basic validation
+    if (!adminId || adminId.trim().length === 0) {
+      return false;
+    }
+
+    // Check if admin ID format is valid (UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(adminId);
+  }
+};
+
+/**
+ * Comprehensive Input Validation
+ */
+export const ComprehensiveValidator = {
+  /**
+   * Validate club application data
+   */
+  validateClubApplication(data: any): { isValid: boolean; errors: Record<string, string[]> } {
+    const errors: Record<string, string[]> = {};
+
+    // Validate club name
+    if (!data.name || typeof data.name !== 'string') {
+      errors.name = ['Club name is required'];
+    } else {
+      const sanitizedName = InputSanitizer.sanitizeText(data.name);
+      if (sanitizedName.length < 2) {
+        errors.name = ['Club name must be at least 2 characters long'];
+      } else if (sanitizedName.length > 100) {
+        errors.name = ['Club name must be less than 100 characters'];
+      }
+    }
+
+    // Validate email
+    if (!data.contact_email || typeof data.contact_email !== 'string') {
+      errors.contact_email = ['Contact email is required'];
+    } else if (!DataValidator.isValidEmail(data.contact_email)) {
+      errors.contact_email = ['Invalid email format'];
+    }
+
+    // Validate description
+    if (data.description && typeof data.description === 'string') {
+      const sanitizedDescription = InputSanitizer.sanitizeText(data.description);
+      if (sanitizedDescription.length > 2000) {
+        errors.description = ['Description must be less than 2000 characters'];
+      }
+    }
+
+    // Validate admin notes (if present)
+    if (data.admin_notes && typeof data.admin_notes === 'string') {
+      const sanitizedNotes = InputSanitizer.sanitizeText(data.admin_notes);
+      if (sanitizedNotes.length > 1000) {
+        errors.admin_notes = ['Admin notes must be less than 1000 characters'];
+      }
+    }
+
+    return {
+      isValid: Object.keys(errors).length === 0,
+      errors
+    };
+  },
+
+  /**
+   * Sanitize and validate admin action data
+   */
+  sanitizeAdminActionData(data: any): any {
+    const sanitized = { ...data };
+
+    // Sanitize string fields
+    if (sanitized.admin_notes) {
+      sanitized.admin_notes = InputSanitizer.sanitizeText(sanitized.admin_notes);
+    }
+
+    if (sanitized.rejection_reason) {
+      sanitized.rejection_reason = InputSanitizer.sanitizeText(sanitized.rejection_reason);
+    }
+
+    // Validate and sanitize club IDs
+    if (sanitized.club_id) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(sanitized.club_id)) {
+        throw new Error('Invalid club ID format');
+      }
+    }
+
+    if (sanitized.clubIds && Array.isArray(sanitized.clubIds)) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      sanitized.clubIds = sanitized.clubIds.filter((id: string) => 
+        typeof id === 'string' && uuidRegex.test(id)
+      );
+    }
+
+    return sanitized;
+  }
+};
+
+/**
  * Initialize security measures
  */
-export function initializeSecurity(): void {
+export function initializeSecurity(onSessionExpired?: () => void): void {
   // Apply CSP
   CSP.apply();
   
@@ -387,4 +802,14 @@ export function initializeSecurity(): void {
   // Generate and store CSRF token
   const csrfToken = CSRF.generateToken();
   CSRF.storeToken(csrfToken);
+
+  // Initialize session monitoring if callback provided
+  if (onSessionExpired) {
+    SessionManager.initializeSessionMonitoring(onSessionExpired);
+  }
+
+  // Set up periodic CSRF token refresh
+  setInterval(() => {
+    CSRF.refreshToken();
+  }, 30 * 60 * 1000); // Refresh every 30 minutes
 }

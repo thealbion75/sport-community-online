@@ -11,6 +11,8 @@ export * from './use-applications';
 export * from './use-messages';
 export * from './use-auth';
 export * from './use-club-approval';
+export * from './use-admin-notifications';
+export * from './use-admin-audit-reporting';
 
 // Utility hooks
 export * from './use-toast';

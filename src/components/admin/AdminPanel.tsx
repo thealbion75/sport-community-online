@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,12 +35,37 @@ import { PlatformAnalytics } from './PlatformAnalytics';
 import { ClubApprovalDashboard } from './ClubApprovalDashboard';
 import { ClubApplicationList } from './ClubApplicationList';
 import { ClubApplicationReview } from './ClubApplicationReview';
+import { AdminActivityDashboard } from './AdminActivityDashboard';
+import { ReportingInterface } from './ReportingInterface';
+import { AuditLogViewer } from './AuditLogViewer';
 import type { PlatformStats } from '@/types';
 
 export const AdminPanel: React.FC = () => {
+  const location = useLocation();
+  const params = useParams();
+  
   const [activeTab, setActiveTab] = useState('overview');
   const [clubApprovalView, setClubApprovalView] = useState<'dashboard' | 'list' | 'detail'>('dashboard');
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
+
+  // Handle URL routing for direct access to club approvals
+  React.useEffect(() => {
+    const path = location.pathname;
+    const hash = window.location.hash.replace('#', '');
+    
+    if (path.includes('/admin/club-approvals')) {
+      setActiveTab('club-approvals');
+      
+      if (params.clubId) {
+        setSelectedClubId(params.clubId);
+        setClubApprovalView('detail');
+      } else if (path === '/admin/club-approvals') {
+        setClubApprovalView('list');
+      }
+    } else if (hash === 'club-approvals') {
+      setActiveTab('club-approvals');
+    }
+  }, [location.pathname, params.clubId]);
 
   // Fetch data for overview
   const { data: verifiedClubs = [] } = useVerifiedClubs();
@@ -197,7 +223,7 @@ export const AdminPanel: React.FC = () => {
 
       {/* Main Admin Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="club-approvals">
             Club Approvals
@@ -218,6 +244,8 @@ export const AdminPanel: React.FC = () => {
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="moderation">Moderation</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="audit">Audit</TabsTrigger>
         </TabsList>
 
         <TabsContent value="club-approvals" className="space-y-6">
@@ -396,6 +424,27 @@ export const AdminPanel: React.FC = () => {
 
         <TabsContent value="analytics" className="space-y-6">
           <PlatformAnalytics stats={stats} />
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-6">
+          <Tabs defaultValue="statistics" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="statistics">Statistics & Reports</TabsTrigger>
+              <TabsTrigger value="admin-activity">Admin Activity</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="statistics" className="space-y-6">
+              <ReportingInterface />
+            </TabsContent>
+            
+            <TabsContent value="admin-activity" className="space-y-6">
+              <AdminActivityDashboard />
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
+
+        <TabsContent value="audit" className="space-y-6">
+          <AuditLogViewer />
         </TabsContent>
       </Tabs>
     </div>

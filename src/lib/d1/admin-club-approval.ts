@@ -20,6 +20,7 @@ import {
   PaginatedResponse 
 } from '@/types';
 import { sanitizeObject } from '@/lib/sanitization';
+import { createNotificationService } from '@/lib/email/notifications';
 
 /**
  * Get pending club applications with filtering and pagination
@@ -44,12 +45,43 @@ export async function getPendingClubApplications(
       paramIndex++;
     }
 
-    // Apply search filter
+    // Apply search filter with configurable search fields
     if (filters?.search) {
       const searchTerm = `%${filters.search.trim()}%`;
-      whereConditions.push(`(name LIKE ?${paramIndex} OR contact_email LIKE ?${paramIndex + 1} OR description LIKE ?${paramIndex + 2})`);
-      params.push(searchTerm, searchTerm, searchTerm);
-      paramIndex += 3;
+      const searchFields = filters.search_fields || ['name', 'email', 'description'];
+      const searchConditions: string[] = [];
+      
+      searchFields.forEach(field => {
+        switch (field) {
+          case 'name':
+            searchConditions.push(`name LIKE ?${paramIndex}`);
+            params.push(searchTerm);
+            paramIndex++;
+            break;
+          case 'email':
+            searchConditions.push(`contact_email LIKE ?${paramIndex}`);
+            params.push(searchTerm);
+            paramIndex++;
+            break;
+          case 'description':
+            searchConditions.push(`description LIKE ?${paramIndex}`);
+            params.push(searchTerm);
+            paramIndex++;
+            break;
+        }
+      });
+      
+      if (searchConditions.length > 0) {
+        whereConditions.push(`(${searchConditions.join(' OR ')})`);
+      }
+    }
+
+    // Apply location filter
+    if (filters?.location) {
+      const locationTerm = `%${filters.location.trim()}%`;
+      whereConditions.push(`location LIKE ?${paramIndex}`);
+      params.push(locationTerm);
+      paramIndex++;
     }
 
     // Apply date filters
@@ -71,6 +103,17 @@ export async function getPendingClubApplications(
     const countResult = await executeQueryFirst<{ count: number }>(countQuery, params);
     const totalCount = countResult?.count || 0;
 
+    // Apply sorting
+    let orderByClause = 'ORDER BY created_at DESC'; // Default sorting
+    if (filters?.sort_by && filters?.sort_order) {
+      const validSortFields = ['name', 'created_at', 'application_status', 'location'];
+      const validSortOrders = ['asc', 'desc'];
+      
+      if (validSortFields.includes(filters.sort_by) && validSortOrders.includes(filters.sort_order)) {
+        orderByClause = `ORDER BY ${filters.sort_by} ${filters.sort_order.toUpperCase()}`;
+      }
+    }
+
     // Apply pagination
     const limit = filters?.limit || 10;
     const offset = filters?.offset || 0;
@@ -78,7 +121,7 @@ export async function getPendingClubApplications(
     const dataQuery = `
       SELECT * FROM clubs 
       ${whereClause}
-      ORDER BY created_at DESC 
+      ${orderByClause}
       LIMIT ?${paramIndex} OFFSET ?${paramIndex + 1}
     `;
     params.push(limit, offset);
@@ -198,13 +241,13 @@ export async function getClubApplicationById(id: string): Promise<ApiResponse<Cl
     };
   }
 }/**
- *
- Approve a club application with status updates and history logging
+ * Approve a club application with status updates and history logging
  */
 export async function approveClubApplication(
   clubId: string,
   adminUserId: string,
-  adminNotes?: string
+  adminNotes?: string,
+  db?: D1Database
 ): Promise<ApiResponse<Club>> {
   try {
     // Verify user is admin
@@ -262,6 +305,26 @@ export async function approveClubApplication(
       updated_at: clubRow.updated_at
     };
 
+    // Send approval notification email
+    try {
+      const notificationService = createNotificationService(db);
+      const notificationResult = await notificationService.sendApprovalNotification({
+        id: club.id,
+        name: club.name,
+        email: club.contact_email,
+        contact_name: club.name, // Using club name as contact name for now
+        application_status: club.application_status
+      });
+
+      if (!notificationResult.success) {
+        console.error('Failed to send approval notification:', notificationResult.error);
+        // Don't fail the approval process if email fails
+      }
+    } catch (emailError) {
+      console.error('Error sending approval notification:', emailError);
+      // Don't fail the approval process if email fails
+    }
+
     // History logging is handled by the database trigger
 
     return { success: true, data: club };
@@ -279,7 +342,8 @@ export async function approveClubApplication(
 export async function rejectClubApplication(
   clubId: string,
   adminUserId: string,
-  rejectionReason: string
+  rejectionReason: string,
+  db?: D1Database
 ): Promise<ApiResponse<Club>> {
   try {
     if (!rejectionReason || rejectionReason.trim().length === 0) {
@@ -341,6 +405,26 @@ export async function rejectClubApplication(
       updated_at: clubRow.updated_at
     };
 
+    // Send rejection notification email
+    try {
+      const notificationService = createNotificationService(db);
+      const notificationResult = await notificationService.sendRejectionNotification({
+        id: club.id,
+        name: club.name,
+        email: club.contact_email,
+        contact_name: club.name, // Using club name as contact name for now
+        application_status: club.application_status
+      }, sanitizedReason);
+
+      if (!notificationResult.success) {
+        console.error('Failed to send rejection notification:', notificationResult.error);
+        // Don't fail the rejection process if email fails
+      }
+    } catch (emailError) {
+      console.error('Error sending rejection notification:', emailError);
+      // Don't fail the rejection process if email fails
+    }
+
     // History logging is handled by the database trigger
 
     return { success: true, data: club };
@@ -401,7 +485,8 @@ export async function getApplicationHistory(clubId: string): Promise<ApiResponse
 export async function bulkApproveApplications(
   clubIds: string[],
   adminUserId: string,
-  adminNotes?: string
+  adminNotes?: string,
+  db?: D1Database
 ): Promise<ApiResponse<{ successful: string[]; failed: { id: string; error: string }[] }>> {
   try {
     if (!clubIds || clubIds.length === 0) {
@@ -419,10 +504,17 @@ export async function bulkApproveApplications(
     const successful: string[] = [];
     const failed: { id: string; error: string }[] = [];
 
+    // Log bulk operation start
+    await logBulkOperation(adminUserId, 'bulk_approve_start', {
+      club_ids: clubIds,
+      admin_notes: adminNotes,
+      total_count: clubIds.length
+    });
+
     // Process each club individually to handle partial failures
     for (const clubId of clubIds) {
       try {
-        const result = await approveClubApplication(clubId, adminUserId, adminNotes);
+        const result = await approveClubApplication(clubId, adminUserId, adminNotes, db);
         if (result.success) {
           successful.push(clubId);
         } else {
@@ -436,15 +528,58 @@ export async function bulkApproveApplications(
       }
     }
 
+    // Log bulk operation completion
+    await logBulkOperation(adminUserId, 'bulk_approve_complete', {
+      successful_count: successful.length,
+      failed_count: failed.length,
+      successful_ids: successful,
+      failed_details: failed
+    });
+
     return {
       success: true,
       data: { successful, failed }
     };
   } catch (error) {
+    // Log bulk operation failure
+    try {
+      await logBulkOperation(adminUserId, 'bulk_approve_error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        club_ids: clubIds
+      });
+    } catch (logError) {
+      // Ignore logging errors to not mask the original error
+      console.error('Failed to log bulk operation error:', logError);
+    }
+    
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error occurred' 
     };
+  }
+}
+
+/**
+ * Log bulk operations for audit trail
+ */
+async function logBulkOperation(
+  adminId: string,
+  action: string,
+  details: Record<string, any>
+): Promise<void> {
+  try {
+    const logQuery = `
+      INSERT INTO club_application_history (id, club_id, admin_id, action, notes, created_at)
+      VALUES (?1, NULL, ?2, ?3, ?4, CURRENT_TIMESTAMP)
+    `;
+    
+    const logId = generateId();
+    const detailsJson = JSON.stringify(details);
+    
+    await executeUpdate(logQuery, [logId, adminId, action, detailsJson]);
+  } catch (error) {
+    // Log errors silently - don't fail the main operation
+    console.error('Failed to log bulk operation:', error);
   }
 }
 
@@ -488,6 +623,68 @@ export async function getClubApplicationStats(): Promise<ApiResponse<{
         total: result.total || 0
       }
     };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    };
+  }
+}
+
+/**
+ * Get bulk operation history for audit purposes
+ */
+export async function getBulkOperationHistory(
+  adminId?: string,
+  limit: number = 50
+): Promise<ApiResponse<Array<{
+  id: string;
+  admin_id: string;
+  admin_email: string;
+  action: string;
+  details: Record<string, any>;
+  created_at: string;
+}>>> {
+  try {
+    let whereClause = 'WHERE h.club_id IS NULL AND h.action LIKE \'bulk_%\'';
+    let params: any[] = [];
+    let paramIndex = 1;
+
+    if (adminId) {
+      whereClause += ` AND h.admin_id = ?${paramIndex}`;
+      params.push(adminId);
+      paramIndex++;
+    }
+
+    const historyQuery = `
+      SELECT 
+        h.id,
+        h.admin_id,
+        h.action,
+        h.notes as details,
+        h.created_at,
+        ar.email as admin_email
+      FROM club_application_history h
+      LEFT JOIN admin_roles ar ON h.admin_id = ar.user_id
+      ${whereClause}
+      ORDER BY h.created_at DESC
+      LIMIT ?${paramIndex}
+    `;
+    params.push(limit);
+
+    const result = await executeQuery<any>(historyQuery, params);
+
+    // Transform the data
+    const history = (result.results || []).map(row => ({
+      id: row.id,
+      admin_id: row.admin_id,
+      admin_email: row.admin_email,
+      action: row.action,
+      details: row.details ? JSON.parse(row.details) : {},
+      created_at: row.created_at
+    }));
+
+    return { success: true, data: history };
   } catch (error) {
     return { 
       success: false, 

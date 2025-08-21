@@ -1,6 +1,6 @@
 /**
  * Club Approval React Query Hooks
- * Custom hooks for admin club approval data fetching and mutations
+ * Custom hooks for admin club approval data fetching and mutations with enhanced security
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +21,9 @@ import {
   PaginatedResponse 
 } from '@/types';
 import { useToast } from './use-toast';
+import { useSecureAdminApi } from '@/lib/secure-api-client';
+import { AdminActionSecurity, SessionManager, CSRF } from '@/lib/security';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Query keys for club approval
 export const clubApprovalKeys = {
@@ -42,6 +45,18 @@ export function usePendingApplications(filters?: ClubApplicationFilters) {
     select: (data) => data.success ? data.data : { data: [], count: 0, page: 1, limit: 10, total_pages: 0 },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on 4xx errors (client errors)
+      if (error && typeof error === 'object' && 'status' in error) {
+        const status = (error as any).status;
+        if (status >= 400 && status < 500) {
+          return false;
+        }
+      }
+      // Retry up to 3 times for network/server errors
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 }
 
@@ -55,6 +70,18 @@ export function useClubApplication(id: string) {
     select: (data) => data.success ? data.data : null,
     enabled: !!id,
     staleTime: 1 * 60 * 1000, // 1 minute
+    retry: (failureCount, error) => {
+      // Don't retry on 4xx errors (client errors)
+      if (error && typeof error === 'object' && 'status' in error) {
+        const status = (error as any).status;
+        if (status >= 400 && status < 500) {
+          return false;
+        }
+      }
+      // Retry up to 3 times for network/server errors
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 }
 
@@ -84,15 +111,56 @@ export function useClubApplicationStats() {
 }
 
 /**
- * Hook to approve club application with optimistic updates
+ * Hook to approve club application with optimistic updates and security checks
  */
 export function useApproveApplication() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const secureApi = useSecureAdminApi();
 
   return useMutation({
-    mutationFn: ({ clubId, adminNotes }: { clubId: string; adminNotes?: string }) => 
-      approveClubApplication(clubId, adminNotes),
+    mutationFn: async ({ clubId, adminNotes }: { clubId: string; adminNotes?: string }) => {
+      // Security checks
+      if (!user) {
+        throw new Error('Authentication required');
+      }
+
+      // Check session validity
+      if (SessionManager.isSessionExpired(SessionManager.getLastActivity())) {
+        SessionManager.clearSession();
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      // Update session activity
+      SessionManager.updateActivity();
+
+      // Check admin rate limiting
+      if (!AdminActionSecurity.isAdminActionAllowed(user.id, 'approve')) {
+        throw new Error('Rate limit exceeded for approval actions');
+      }
+
+      // Validate CSRF token
+      const csrfToken = CSRF.getToken();
+      if (!csrfToken) {
+        throw new Error('Security token missing. Please refresh the page.');
+      }
+
+      // Log admin action
+      AdminActionSecurity.logAdminAction(user.id, 'approve', {
+        clubId,
+        adminNotes: adminNotes || '',
+        timestamp: new Date().toISOString()
+      });
+
+      // Use secure API client
+      const result = await secureApi.approveClub(clubId, adminNotes);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to approve application');
+      }
+
+      return result;
+    },
     
     // Optimistic update
     onMutate: async ({ clubId }) => {
@@ -160,25 +228,85 @@ export function useApproveApplication() {
         queryClient.setQueryData(clubApprovalKeys.stats(), context.previousStats);
       }
 
+      // Enhanced error handling
+      const errorMessage = error instanceof Error ? error.message : 'Failed to approve application';
+      const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('network');
+      
       toast({
-        title: 'Error',
-        description: 'Failed to approve application. Please try again.',
+        title: isNetworkError ? 'Network Error' : 'Error',
+        description: isNetworkError ? 
+          'Unable to approve application due to network issues. Please check your connection and try again.' :
+          'Failed to approve application. Please try again.',
         variant: 'destructive',
+        action: {
+          label: 'Retry',
+          onClick: () => window.location.reload()
+        }
       });
     },
   });
 }
 
 /**
- * Hook to reject club application with error handling
+ * Hook to reject club application with error handling and security checks
  */
 export function useRejectApplication() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const secureApi = useSecureAdminApi();
 
   return useMutation({
-    mutationFn: ({ clubId, rejectionReason }: { clubId: string; rejectionReason: string }) => 
-      rejectClubApplication(clubId, rejectionReason),
+    mutationFn: async ({ clubId, rejectionReason }: { clubId: string; rejectionReason: string }) => {
+      // Security checks
+      if (!user) {
+        throw new Error('Authentication required');
+      }
+
+      // Validate rejection reason
+      if (!rejectionReason || rejectionReason.trim().length === 0) {
+        throw new Error('Rejection reason is required');
+      }
+
+      if (rejectionReason.trim().length > 1000) {
+        throw new Error('Rejection reason must be less than 1000 characters');
+      }
+
+      // Check session validity
+      if (SessionManager.isSessionExpired(SessionManager.getLastActivity())) {
+        SessionManager.clearSession();
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      // Update session activity
+      SessionManager.updateActivity();
+
+      // Check admin rate limiting
+      if (!AdminActionSecurity.isAdminActionAllowed(user.id, 'reject')) {
+        throw new Error('Rate limit exceeded for rejection actions');
+      }
+
+      // Validate CSRF token
+      const csrfToken = CSRF.getToken();
+      if (!csrfToken) {
+        throw new Error('Security token missing. Please refresh the page.');
+      }
+
+      // Log admin action
+      AdminActionSecurity.logAdminAction(user.id, 'reject', {
+        clubId,
+        rejectionReason: rejectionReason.trim(),
+        timestamp: new Date().toISOString()
+      });
+
+      // Use secure API client
+      const result = await secureApi.rejectClub(clubId, rejectionReason.trim());
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to reject application');
+      }
+
+      return result;
+    },
     
     // Optimistic update
     onMutate: async ({ clubId, rejectionReason }) => {
@@ -247,25 +375,86 @@ export function useRejectApplication() {
         queryClient.setQueryData(clubApprovalKeys.stats(), context.previousStats);
       }
 
+      // Enhanced error handling
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reject application';
+      const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('network');
+      
       toast({
-        title: 'Error',
-        description: 'Failed to reject application. Please try again.',
+        title: isNetworkError ? 'Network Error' : 'Error',
+        description: isNetworkError ? 
+          'Unable to reject application due to network issues. Please check your connection and try again.' :
+          'Failed to reject application. Please try again.',
         variant: 'destructive',
+        action: {
+          label: 'Retry',
+          onClick: () => window.location.reload()
+        }
       });
     },
   });
 }
 
 /**
- * Hook for bulk approval operations
+ * Hook for bulk approval operations with enhanced security
  */
 export function useBulkApproveApplications() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const secureApi = useSecureAdminApi();
 
   return useMutation({
-    mutationFn: ({ clubIds, adminNotes }: { clubIds: string[]; adminNotes?: string }) => 
-      bulkApproveApplications(clubIds, adminNotes),
+    mutationFn: async ({ clubIds, adminNotes }: { clubIds: string[]; adminNotes?: string }) => {
+      // Security checks
+      if (!user) {
+        throw new Error('Authentication required');
+      }
+
+      // Validate input
+      if (!clubIds || clubIds.length === 0) {
+        throw new Error('No applications selected for bulk approval');
+      }
+
+      if (clubIds.length > 50) {
+        throw new Error('Cannot approve more than 50 applications at once');
+      }
+
+      // Check session validity
+      if (SessionManager.isSessionExpired(SessionManager.getLastActivity())) {
+        SessionManager.clearSession();
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      // Update session activity
+      SessionManager.updateActivity();
+
+      // Check admin rate limiting for bulk operations
+      if (!AdminActionSecurity.isAdminActionAllowed(user.id, 'bulk_approve')) {
+        throw new Error('Rate limit exceeded for bulk approval actions');
+      }
+
+      // Validate CSRF token
+      const csrfToken = CSRF.getToken();
+      if (!csrfToken) {
+        throw new Error('Security token missing. Please refresh the page.');
+      }
+
+      // Log admin action
+      AdminActionSecurity.logAdminAction(user.id, 'bulk_approve', {
+        clubIds,
+        adminNotes: adminNotes || '',
+        count: clubIds.length,
+        timestamp: new Date().toISOString()
+      });
+
+      // Use secure API client
+      const result = await secureApi.bulkApprove(clubIds, adminNotes);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to process bulk approvals');
+      }
+
+      return result;
+    },
     
     onSuccess: (result) => {
       if (result.success) {

@@ -286,4 +286,25 @@ export interface ClubApplicationFilters {
   date_to?: string;
   limit?: number;
   offset?: number;
+  // Advanced search fields
+  search_fields?: ('name' | 'email' | 'description')[];
+  location?: string;
+  sort_by?: 'name' | 'created_at' | 'application_status' | 'location';
+  sort_order?: 'asc' | 'desc';
+}
+
+/**
+ * Advanced search configuration
+ */
+export interface AdvancedSearchConfig {
+  searchTerm: string;
+  searchFields: ('name' | 'email' | 'description')[];
+  dateRange: {
+    from?: Date;
+    to?: Date;
+  };
+  location?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'all';
+  sortBy: 'name' | 'created_at' | 'application_status' | 'location';
+  sortOrder: 'asc' | 'desc';
 }

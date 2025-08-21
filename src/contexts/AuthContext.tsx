@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { SessionManager, CSRF } from '@/lib/security';
 
 type AuthContextType = {
   session: Session | null;
@@ -24,18 +25,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Clean up auth state in localStorage
   const cleanupAuthState = () => {
-    // Remove all Supabase auth keys from localStorage
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        localStorage.removeItem(key);
-      }
-    });
-    // Remove from sessionStorage if in use
-    Object.keys(sessionStorage || {}).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        sessionStorage.removeItem(key);
-      }
-    });
+    // Use secure session manager for cleanup
+    SessionManager.clearSession();
   };
 
   useEffect(() => {
@@ -47,6 +38,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(newSession?.user ?? null);
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          // Initialize session management
+          SessionManager.updateActivity();
+          
+          // Generate new CSRF token
+          const csrfToken = CSRF.generateToken();
+          CSRF.storeToken(csrfToken);
+          
           // Defer data fetching to prevent deadlocks
           setTimeout(() => {
             // Handle additional actions on sign in if needed
@@ -55,6 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (event === 'SIGNED_OUT') {
+          // Clean up security tokens and session data
+          cleanupAuthState();
           console.log('User signed out');
         }
       }
@@ -83,10 +83,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
 
+    // Initialize session monitoring
+    SessionManager.initializeSessionMonitoring(() => {
+      // Handle session expiration
+      cleanupAuthState();
+      setSession(null);
+      setUser(null);
+      toast({
+        title: 'Session Expired',
+        description: 'Your session has expired. Please log in again.',
+        variant: 'destructive',
+      });
+      navigate('/login');
+    });
+
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const signUp = async (email: string, password: string, metadata?: Record<string, unknown>) => {
     try {

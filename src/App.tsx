@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { initializeSecurity } from "./lib/security";
 import { ErrorBoundary } from "./components/ui/error-boundary";
 import { createQueryClient } from "./lib/react-query-error-handler";
 import { setupGlobalErrorHandlers } from "./lib/global-error-handler";
@@ -32,9 +33,15 @@ const queryClient = createQueryClient();
  * This includes React Query for data fetching, tooltips, toast notifications, and error handling.
  */
 const App = () => {
-  // Set up global error handlers on app initialization
+  // Set up global error handlers and security measures on app initialization
   useEffect(() => {
     setupGlobalErrorHandlers();
+    
+    // Initialize security measures
+    initializeSecurity(() => {
+      // Handle session expiration - this will be called by SessionManager
+      console.log('Session expired, redirecting to login');
+    });
   }, []);
 
   return (
@@ -61,6 +68,9 @@ const App = () => {
                 <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
                 <Route path="/sports-council/admin" element={<SportsCouncilAdmin />} />
                 <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/admin/dashboard" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/admin/club-approvals" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/admin/club-approvals/:clubId" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                 
                 {/* 404 page for non-existent routes */}
                 <Route path="*" element={<NotFound />} />

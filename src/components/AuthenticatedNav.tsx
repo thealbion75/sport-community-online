@@ -197,6 +197,12 @@ const AuthenticatedNav = () => {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
+                <Link to="/admin#club-approvals" className="flex items-center">
+                  <Building className="mr-2 h-4 w-4" />
+                  <span>Club Approvals</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link to="/admin/clubs" className="flex items-center">
                   <Building className="mr-2 h-4 w-4" />
                   <span>Manage Clubs</span>

@@ -81,7 +81,7 @@ const MeetingTimesSelector: React.FC<MeetingTimesSelectorProps> = ({ control, na
               clearErrors(`${name}.${index}.endTime`);
             }
           }
-          
+
           field.onChange(newMeetingTimes);
         };
 
@@ -104,7 +104,7 @@ const MeetingTimesSelector: React.FC<MeetingTimesSelectorProps> = ({ control, na
                       </Button>
                     )}
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
                       <label className="text-sm font-medium mb-1 block">Day</label>

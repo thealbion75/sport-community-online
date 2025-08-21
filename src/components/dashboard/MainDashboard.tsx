@@ -193,126 +193,16 @@ export const MainDashboard: React.FC = () => {
     );
   }
 
-  // Platform Admin Dashboard
+  // Platform Admin Dashboard - redirect to AdminPanel
   if (userRole === UserRole.PLATFORM_ADMIN) {
+    // For platform admins, redirect to the full admin panel
+    window.location.href = '/admin';
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold">Platform Administration</h1>
-              <p className="text-gray-600 mt-1">
-                Manage the EGSport volunteer platform
-              </p>
-            </div>
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Settings className="h-3 w-3" />
-              Administrator
-            </Badge>
-          </div>
-
-          {/* Admin Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2">
-                  <Building className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Total Clubs</p>
-                    <p className="text-2xl font-bold">-</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Total Volunteers</p>
-                    <p className="text-2xl font-bold">-</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-purple-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Active Opportunities</p>
-                    <p className="text-2xl font-bold">-</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-orange-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Applications</p>
-                    <p className="text-2xl font-bold">-</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Admin Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Club Management</CardTitle>
-                <CardDescription>
-                  Manage club registrations and verifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Link to="/admin/clubs">
-                    <Button className="w-full justify-start">
-                      <Building className="h-4 w-4 mr-2" />
-                      Manage Clubs
-                    </Button>
-                  </Link>
-                  <Link to="/admin/clubs/pending">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Pending Verifications
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Platform Overview</CardTitle>
-                <CardDescription>
-                  Monitor platform activity and health
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Link to="/admin/analytics">
-                    <Button className="w-full justify-start">
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      View Analytics
-                    </Button>
-                  </Link>
-                  <Link to="/admin/reports">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Generate Reports
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-600">Redirecting to admin panel...</p>
           </div>
         </div>
       </div>

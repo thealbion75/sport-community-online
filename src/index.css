@@ -193,6 +193,24 @@
     @apply text-sm text-muted-foreground leading-normal;
   }
 
+  /* Mobile Touch Optimization */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .touch-friendly {
+    @apply min-h-[44px] min-w-[44px] touch-manipulation;
+  }
+
+  .mobile-card {
+    @apply p-4 rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow touch-manipulation;
+  }
+
+  .mobile-list-item {
+    @apply p-3 border-b last:border-b-0 hover:bg-muted/50 touch-manipulation cursor-pointer;
+  }
+
   /* Enhanced Card System */
   .egsport-card {
     @apply bg-card text-card-foreground rounded-lg border shadow-sm p-6 transition-all duration-300 hover:shadow-md;
@@ -278,5 +296,74 @@
 
   .egsport-slide-up {
     @apply animate-in slide-in-from-bottom-4 duration-300;
+  }
+
+  /* Mobile Responsive Utilities */
+  .mobile-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+
+  .mobile-flex {
+    @apply flex flex-col sm:flex-row gap-4;
+  }
+
+  .mobile-text {
+    @apply text-sm sm:text-base;
+  }
+
+  .mobile-padding {
+    @apply p-3 sm:p-4 lg:p-6;
+  }
+
+  .mobile-margin {
+    @apply m-3 sm:m-4 lg:m-6;
+  }
+
+  /* Swipe Gesture Support */
+  .swipe-container {
+    @apply relative overflow-hidden touch-pan-y;
+  }
+
+  .swipe-indicator {
+    @apply absolute top-1/2 -translate-y-1/2 bg-black/20 text-white rounded-full p-2 transition-all duration-200 pointer-events-none opacity-0 scale-90;
+  }
+
+  .swipe-indicator.active {
+    @apply opacity-100 scale-110;
+  }
+
+  /* Mobile Dialog Optimizations */
+  .mobile-dialog {
+    @apply mx-4 max-w-md;
+  }
+
+  .mobile-dialog-content {
+    @apply max-h-[80vh] overflow-y-auto;
+  }
+
+  .mobile-dialog-footer {
+    @apply flex-col sm:flex-row gap-2;
+  }
+
+  /* Touch-friendly form elements */
+  .mobile-input {
+    @apply h-12 touch-manipulation;
+  }
+
+  .mobile-button {
+    @apply min-h-[44px] touch-manipulation;
+  }
+
+  .mobile-checkbox {
+    @apply h-5 w-5 touch-manipulation;
+  }
+
+  /* Mobile table alternatives */
+  .mobile-table-card {
+    @apply block md:hidden space-y-3;
+  }
+
+  .mobile-table-desktop {
+    @apply hidden md:block;
   }
 }

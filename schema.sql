@@ -110,9 +110,9 @@ CREATE TABLE IF NOT EXISTS messages (
 -- Club application history table for tracking approval decisions
 CREATE TABLE IF NOT EXISTS club_application_history (
   id TEXT PRIMARY KEY,
-  club_id TEXT NOT NULL REFERENCES clubs(id) ON DELETE CASCADE,
+  club_id TEXT REFERENCES clubs(id) ON DELETE CASCADE, -- Allow NULL for bulk operations
   admin_id TEXT NOT NULL REFERENCES users(id),
-  action TEXT NOT NULL CHECK (action IN ('approved', 'rejected', 'pending')),
+  action TEXT NOT NULL CHECK (action IN ('approved', 'rejected', 'pending', 'bulk_approve_start', 'bulk_approve_complete', 'bulk_approve_error')),
   notes TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -172,6 +172,8 @@ CREATE INDEX IF NOT EXISTS idx_club_application_history_club_id ON club_applicat
 CREATE INDEX IF NOT EXISTS idx_club_application_history_admin_id ON club_application_history(admin_id);
 CREATE INDEX IF NOT EXISTS idx_club_application_history_action ON club_application_history(action);
 CREATE INDEX IF NOT EXISTS idx_club_application_history_created_at ON club_application_history(created_at);
+-- Index for bulk operations (where club_id is NULL)
+CREATE INDEX IF NOT EXISTS idx_club_application_history_bulk_ops ON club_application_history(admin_id, action, created_at) WHERE club_id IS NULL;
 
 -- Session indexes
 CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
