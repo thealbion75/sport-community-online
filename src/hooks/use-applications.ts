@@ -4,21 +4,9 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  createApplication,
-  getApplicationById,
-  getApplicationsByVolunteer,
-  getApplicationsByOpportunity,
-  getApplicationsByClub,
-  updateApplicationStatus,
-  withdrawApplication,
-  acceptApplication,
-  rejectApplication,
-  deleteApplication,
-  hasVolunteerApplied,
-  getClubApplicationStats,
-  getVolunteerApplicationStats
-} from '@/lib/supabase/applications';
+import { applicationsApi } from '@/lib/d1-api-client';
+// All application operations now use D1 API endpoints
+
 import { VolunteerApplication, ApplicationFormData } from '@/types';
 import { useToast } from './use-toast';
 

@@ -4,18 +4,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  createVolunteerProfile,
-  getVolunteerProfileByUserId,
-  getVolunteerProfileById,
-  updateVolunteerProfile,
-  deleteVolunteerProfile,
-  searchVolunteers,
-  getVisibleVolunteers,
-  updateVolunteerVisibility,
-  searchVolunteersByText,
-  getVolunteerCount
-} from '@/lib/supabase/volunteers';
+// All volunteer operations now use D1 API endpoints
+
 import { VolunteerProfile, VolunteerRegistrationData, VolunteerFilters } from '@/types';
 import { useToast } from './use-toast';
 

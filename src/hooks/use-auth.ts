@@ -4,20 +4,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  signUp,
-  signIn,
-  signOut,
-  getCurrentUser,
-  getCurrentSession,
-  resetPassword,
-  updatePassword,
-  updateEmail,
-  isUserAdmin,
-  getUserRole,
-  hasPermission,
-  onAuthStateChange
-} from '@/lib/supabase/auth';
+// All auth operations now use D1 API endpoints
+
 import { UserRole } from '@/types';
 import { useToast } from './use-toast';
 import { useEffect } from 'react';

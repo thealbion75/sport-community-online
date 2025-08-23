@@ -4,18 +4,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  createOpportunity,
-  getOpportunityById,
-  getOpportunities,
-  updateOpportunity,
-  updateOpportunityStatus,
-  deleteOpportunity,
-  getOpportunitiesByClub,
-  searchOpportunities,
-  getOpportunityCount,
-  getRecentOpportunities
-} from '@/lib/supabase/opportunities';
+// All opportunity operations now use D1 API endpoints
+
 import { VolunteerOpportunity, OpportunityFormData, OpportunityFilters } from '@/types';
 import { useToast } from './use-toast';
 

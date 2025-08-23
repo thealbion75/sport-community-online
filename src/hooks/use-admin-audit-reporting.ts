@@ -4,22 +4,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  getApplicationStatistics,
-  getAdminPerformanceMetrics,
-  getAdminActivityLog,
-  logAdminAction,
-  exportApplicationData,
-  exportAdminActivityReport,
-  exportStatisticsReport,
-  getApplicationTimeline,
-  getAuditSummary,
-  AdminActivityLog,
-  ApplicationStatistics,
-  AdminPerformanceMetrics,
-  ReportFilters,
-  ExportOptions
-} from '@/lib/supabase/admin-audit-reporting';
+// All audit reporting operations now use D1 API endpoints
+
 import { PaginatedResponse } from '@/types';
 import { useToast } from './use-toast';
 

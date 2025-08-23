@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { sportsCouncilApi } from '@/lib/d1-api-client';
 import { useToast } from './use-toast';
 import type { 
   SportsCouncilMeeting, 
@@ -32,35 +32,25 @@ export function usePublicMeetings(filters?: MeetingFilters) {
   return useQuery({
     queryKey: sportsCouncilKeys.publicMeetings(filters),
     queryFn: async () => {
-      let query = supabase
-        .from('sports_council_meetings')
-        .select('*')
-        .eq('is_public', true)
-        .order('meeting_date', { ascending: false });
-
+      const result = await sportsCouncilApi.getMeetings();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch meetings');
+      }
+      
+      let meetings = result.data || [];
+      
+      // Apply filters client-side for now
       if (filters?.status && filters.status !== 'all') {
-        query = query.eq('status', filters.status);
+        meetings = meetings.filter(m => m.status === filters.status);
       }
-
+      
       if (filters?.year) {
-        const startDate = `${filters.year}-01-01`;
-        const endDate = `${filters.year}-12-31`;
-        query = query.gte('meeting_date', startDate).lte('meeting_date', endDate);
+        meetings = meetings.filter(m => 
+          new Date(m.meeting_date).getFullYear() === filters.year
+        );
       }
-
-      if (filters?.month && filters?.year) {
-        const startDate = `${filters.year}-${filters.month.toString().padStart(2, '0')}-01`;
-        const endDate = new Date(filters.year, filters.month, 0).toISOString().split('T')[0];
-        query = query.gte('meeting_date', startDate).lte('meeting_date', endDate);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(`Failed to fetch meetings: ${error.message}`);
-      }
-
-      return data as SportsCouncilMeeting[];
+      
+      return meetings as SportsCouncilMeeting[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -73,28 +63,25 @@ export function useAllMeetings(filters?: MeetingFilters) {
   return useQuery({
     queryKey: [...sportsCouncilKeys.meetings(), 'all', filters],
     queryFn: async () => {
-      let query = supabase
-        .from('sports_council_meetings')
-        .select('*')
-        .order('meeting_date', { ascending: false });
-
+      const result = await sportsCouncilApi.getMeetings();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch meetings');
+      }
+      
+      let meetings = result.data || [];
+      
+      // Apply filters client-side for now
       if (filters?.status && filters.status !== 'all') {
-        query = query.eq('status', filters.status);
+        meetings = meetings.filter(m => m.status === filters.status);
       }
-
+      
       if (filters?.year) {
-        const startDate = `${filters.year}-01-01`;
-        const endDate = `${filters.year}-12-31`;
-        query = query.gte('meeting_date', startDate).lte('meeting_date', endDate);
+        meetings = meetings.filter(m => 
+          new Date(m.meeting_date).getFullYear() === filters.year
+        );
       }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(`Failed to fetch meetings: ${error.message}`);
-      }
-
-      return data as SportsCouncilMeeting[];
+      
+      return meetings as SportsCouncilMeeting[];
     },
     staleTime: 2 * 60 * 1000, // 2 minutes for admin data
   });
@@ -107,17 +94,16 @@ export function useMeeting(id: string) {
   return useQuery({
     queryKey: sportsCouncilKeys.meeting(id),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sports_council_meetings')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        throw new Error(`Failed to fetch meeting: ${error.message}`);
+      const response = await fetch(`/api/sports-council/meetings/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('d1_session') ? JSON.parse(localStorage.getItem('d1_session')!).access_token : ''}`,
+        },
+      });
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch meeting');
       }
-
-      return data as SportsCouncilMeeting;
+      return result.data as SportsCouncilMeeting;
     },
     enabled: !!id,
   });
@@ -132,18 +118,18 @@ export function useIsSportsCouncilAdmin(email?: string) {
     queryFn: async () => {
       if (!email) return false;
 
-      const { data, error } = await supabase
-        .from('sports_council_admins')
-        .select('id')
-        .eq('email', email)
-        .eq('is_active', true)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw new Error(`Failed to check admin status: ${error.message}`);
+      try {
+        const response = await fetch('/api/sports-council/check-admin', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('d1_session') ? JSON.parse(localStorage.getItem('d1_session')!).access_token : ''}`,
+          },
+        });
+        const result = await response.json();
+        return result.success && result.data?.is_admin || false;
+      } catch (error) {
+        console.error('Error checking sports council admin status:', error);
+        return false;
       }
-
-      return !!data;
     },
     enabled: !!email,
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -157,25 +143,18 @@ export function useSportsCouncilStats() {
   return useQuery({
     queryKey: sportsCouncilKeys.stats(),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sports_council_meetings')
-        .select('status, meeting_date');
-
-      if (error) {
-        throw new Error(`Failed to fetch stats: ${error.message}`);
+      const response = await fetch('/api/sports-council/stats', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('d1_session') ? JSON.parse(localStorage.getItem('d1_session')!).access_token : ''}`,
+        },
+      });
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch stats');
       }
 
-      const currentYear = new Date().getFullYear();
-      const stats: SportsCouncilStats = {
-        total_meetings: data.length,
-        upcoming_meetings: data.filter(m => m.status === 'upcoming').length,
-        completed_meetings: data.filter(m => m.status === 'completed').length,
-        meetings_this_year: data.filter(m => 
-          new Date(m.meeting_date).getFullYear() === currentYear
-        ).length,
-      };
-
-      return stats;
+      return result.data as SportsCouncilStats;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -190,17 +169,11 @@ export function useCreateMeeting() {
 
   return useMutation({
     mutationFn: async (meetingData: MeetingFormData) => {
-      const { data, error } = await supabase
-        .from('sports_council_meetings')
-        .insert([meetingData])
-        .select()
-        .single();
-
-      if (error) {
-        throw new Error(`Failed to create meeting: ${error.message}`);
+      const result = await sportsCouncilApi.createMeeting(meetingData);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create meeting');
       }
-
-      return data as SportsCouncilMeeting;
+      return result.data as SportsCouncilMeeting;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: sportsCouncilKeys.meetings() });
@@ -228,18 +201,11 @@ export function useUpdateMeeting() {
 
   return useMutation({
     mutationFn: async ({ id, ...meetingData }: MeetingFormData & { id: string }) => {
-      const { data, error } = await supabase
-        .from('sports_council_meetings')
-        .update(meetingData)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        throw new Error(`Failed to update meeting: ${error.message}`);
+      const result = await sportsCouncilApi.updateMeeting(id, meetingData);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update meeting');
       }
-
-      return data as SportsCouncilMeeting;
+      return result.data as SportsCouncilMeeting;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: sportsCouncilKeys.meetings() });
@@ -268,13 +234,16 @@ export function useDeleteMeeting() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('sports_council_meetings')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        throw new Error(`Failed to delete meeting: ${error.message}`);
+      const response = await fetch(`/api/sports-council/meetings/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('d1_session') ? JSON.parse(localStorage.getItem('d1_session')!).access_token : ''}`,
+        },
+      });
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete meeting');
       }
 
       return id;

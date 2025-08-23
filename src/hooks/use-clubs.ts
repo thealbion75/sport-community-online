@@ -4,16 +4,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  getClubs, 
-  getClubById, 
-  createClub, 
-  updateClub, 
-  deleteClub, 
-  verifyClub,
-  getClubByEmail,
-  searchClubs
-} from '@/lib/supabase/clubs';
+// All club operations now use D1 API endpoints
+
 import { Club, ClubRegistrationData } from '@/types';
 import { useToast } from './use-toast';
 

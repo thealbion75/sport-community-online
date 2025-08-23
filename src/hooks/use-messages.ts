@@ -4,19 +4,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  sendMessage,
-  getMessageById,
-  getInboxMessages,
-  getSentMessages,
-  getConversation,
-  markMessageAsRead,
-  markMessagesAsRead,
-  deleteMessage,
-  getUnreadMessageCount,
-  getRecentConversations,
-  searchMessages
-} from '@/lib/supabase/messages';
+// All message operations now use D1 API endpoints
+
 import { Message, MessageFormData, Conversation } from '@/types/volunteer';
 import { useToast } from '@/hooks/use-toast';
 

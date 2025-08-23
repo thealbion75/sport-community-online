@@ -1,29 +1,30 @@
 #!/usr/bin/env node
 
-/**
- * Simple password hash generator for D1 admin setup
- * Usage: node generate-password-hash.js "your-password"
- */
+// Simple password hash generator for D1 admin setup
+// Usage: node generate-password-hash.js "your-password"
 
-const crypto = require('crypto');
+import crypto from 'crypto';
 
-function simpleHash(password) {
-  // Simple SHA-256 hash to match the D1 auth implementation
-  return crypto.createHash('sha256').update(password).digest('hex');
+function generateBcryptHash(password, rounds = 10) {
+  // Simple bcrypt-like hash using Node.js crypto
+  // For production, use proper bcrypt library
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return `$2b$${rounds}$${salt}${hash}`;
 }
 
 const password = process.argv[2];
 
 if (!password) {
   console.log('Usage: node generate-password-hash.js "your-password"');
-  console.log('');
-  console.log('This generates a simple hash for development.');
-  console.log('For production, use proper bcrypt hashing.');
+  console.log('Example: node generate-password-hash.js "MySecurePassword123!"');
   process.exit(1);
 }
 
-const hash = simpleHash(password);
-console.log('Password hash:', hash);
-console.log('');
-console.log('Update your setup-d1-admin.sql file with this hash:');
-console.log(`'${hash}'`);
+const hash = generateBcryptHash(password);
+console.log('\n🔐 Password Hash Generated:');
+console.log('Password:', password);
+console.log('Hash:', hash);
+console.log('\n📋 Copy this hash to setup-d1-admin.sql');
+console.log('Replace: $2b$10$example.hash.here');
+console.log('With:    ' + hash);
